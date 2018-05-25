@@ -1,4 +1,5 @@
 
+
 AC_INIT([SSTCore], [-dev], [sst@sandia.gov])
 
 AC_PREREQ([2.59])
