@@ -1194,13 +1194,14 @@ Config::parseCmdLine(int argc, char* argv[])
             }
 
             case 'V':
-                ok                = helper.printVersion();
+                ok = helper.printVersion();
                 helper.clean_exit = true;
                 break;
 
             case 'h':
                 helper.clean_exit = true;
-            /* fall through */
+                [[fallthrough]];
+
             default:
                 ok = helper.usage();
             }

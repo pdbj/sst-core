@@ -32,6 +32,9 @@ AC_CACHE_SAVE
 
 LT_INIT([shared disable-static dlopen])
 
+dnl Allow aligned new from C++17
+CXXFLAGS=-faligned-new
+
 dnl Work out the C++ standard which we are going to use
 AX_CXX_COMPILE_STDCXX_1Y
 AX_CXX_COMPILE_STDCXX_0X
