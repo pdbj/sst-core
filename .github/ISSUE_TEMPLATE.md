@@ -11,3 +11,4 @@ New Issue for sst-core
 5 - Provide sha1 of all relevant sst repositories (sst-core, sst-elements, etc)
 
 6 - Fill out Labels, Milestones, and Assignee fields as best possible
+
