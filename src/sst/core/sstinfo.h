@@ -72,6 +72,9 @@ public:
     bool processAllElements() const { return m_filters.empty(); }
     bool doVerbose() const { return m_optionBits & CFG_VERBOSE; }
 
+    /** Get the override paths set with `-L' */
+    std::vector<std::string> getOverridePaths() const;
+
 private:
     void outputUsage();
     void outputVersion();
@@ -84,6 +87,7 @@ private:
     std::string              m_XMLFilePath;
     bool                     m_debugEnabled;
     FilterMap_t              m_filters;
+    std::vector<std::string> m_overridePaths;
 };
 
 /**

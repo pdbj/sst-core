@@ -18,6 +18,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <getopt.h>
 #include <map>
 #include <string>
 
@@ -27,6 +28,7 @@ print_usage(FILE* output)
     fprintf(output, "sst-config\n");
     fprintf(output, "sst-config --<KEY>\n");
     fprintf(output, "sst-config <GROUP> <KEY>\n");
+    fprintf(output, "sst-config -L <LIBPATH> ...\n");
     fprintf(output, "\n");
     fprintf(output, "<GROUP>    Name of group to which the key belongs\n");
     fprintf(output, "           (e.g. DRAMSim group contains all DRAMSim\n");
@@ -34,6 +36,7 @@ print_usage(FILE* output)
     fprintf(output, "<KEY>      Name of the setting key to find.\n");
     fprintf(output, "           If <GROUP> not specified this is found in\n");
     fprintf(output, "           the \'SSTCore\' default group.\n");
+    fprintf(output, "<LIBPATH>  Additional configuration file to query\n");
     fprintf(output, "\n");
     fprintf(output, "Example 1:\n");
     fprintf(output, "  sst-config --CXX\n");
@@ -54,55 +57,79 @@ print_usage(FILE* output)
     exit(1);
 }
 
-int
-main(int argc, char* argv[])
-{
-    bool found_help = false;
+int main(int argc, char* argv[]) {
+
+    std::vector<std::string> overrideConfigFiles;
 
     std::string groupName("");
     std::string key("");
+    std::string keyTemp("");
 
-    for ( int i = 1; i < argc; i++ ) {
-        if ( strcmp(argv[i], "--help") == 0 || strcmp(argv[i], "-help") == 0 ) {
-            found_help = true;
-            break;
-        }
-    }
+    { // Handle args
+	static struct option long_options[] =
+	    {
+		{"help",     no_argument,       0, 'h'},
+		{"lib-path", required_argument, 0, 'L'},
+		{nullptr,    0,                 0,  0 }
+	    };
+	// Disable error reporting
+	opterr = 0;
 
-    if ( found_help ) { print_usage(stdout); }
+	while (1) {
+	    const int intC = getopt_long(argc, argv, ":hL:", long_options, 0);
+
+	    if (intC == -1)
+		break;
+
+	    switch (intC) {
+	    case 0 :  break;  // no more options
+
+	    case 'h':
+		print_usage(stdout);
+		exit(0);
+		break;
+
+	    case 'L':
+		overrideConfigFiles.push_back(optarg);
+		break;
+
+	    case '?':  // fall through
+	    case ':':  // fall through
+	    default:
+		// We don't wan't to have to specify all the valid options
+		// --CC, --CXX, ...
+		// So we don't treat this as an error, just record the
+		// options.
+		keyTemp = argv[optind - 1];
+		groupName = "SSTCore";
+
+	    }  // switch
+	}  // while
+    }  // Handle args
+
+    // Number of non-options
+    int nonOptions = argc - optind;
 
     bool dumpEnv = false;
 
-    if ( argc == 1 ) { dumpEnv = true; }
-    else if ( argc == 2 ) {
-        groupName = static_cast<std::string>("SSTCore");
-        std::string keyTemp(argv[1]);
-
-        if ( keyTemp.size() < 2 ) {
-            fprintf(
-                stderr, "Error: key (%s) is not specified with a group and doesn't start with --\n", keyTemp.c_str());
+    if(nonOptions == 0 && keyTemp.size() == 0) {
+        dumpEnv = true;
+    } else if(keyTemp.size() > 0) {
+        if(keyTemp.size() < 3 || keyTemp.substr(0, 2) != "--") {
+            fprintf(stderr, "Error: key (%s) is not specified with a group and doesn't start with --\n", keyTemp.c_str());
             print_usage(stderr);
             exit(-1);
         }
-
-        if ( keyTemp.substr(0, 2) == "--" ) { key = keyTemp.substr(2); }
-        else {
-            fprintf(
-                stderr, "Error: key (%s) is not specified with a group and doesn't start with --\n", keyTemp.c_str());
-            print_usage(stderr);
-            exit(-1);
-        }
-    }
-    else if ( argc == 3 ) {
-        groupName = static_cast<std::string>(argv[1]);
-        key       = static_cast<std::string>(argv[2]);
-    }
-    else {
+	key = keyTemp.substr(2);
+    } else if (nonOptions == 2) {
+        groupName = static_cast<std::string>(argv[optind++]);
+        key       = static_cast<std::string>(argv[optind]);
+    } else {
         fprintf(stderr, "Error: you specified an incorrect number of parameters\n");
         print_usage(stderr);
+	exit(0);
     }
 
-    std::vector<std::string>                          overrideConfigFiles;
     SST::Core::Environment::EnvironmentConfiguration* database =
         SST::Core::Environment::getSSTEnvironmentConfiguration(overrideConfigFiles);
     bool keyFound = false;

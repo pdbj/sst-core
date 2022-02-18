@@ -245,7 +245,9 @@ sst_info_SOURCES = \
 	env/envquery.h \
 	env/envconfig.h \
 	env/envquery.cc \
-	env/envconfig.cc
+	env/envconfig.cc \
+	sstinfo.h
+
 
 sst_SOURCES = \
 	bootsst.cc \

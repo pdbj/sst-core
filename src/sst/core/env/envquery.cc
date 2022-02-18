@@ -24,6 +24,14 @@
 #include <string>
 #include <sys/file.h>
 
+// Debugging output
+#if 0
+#  define DEBUG(msg) std::cout << "DBG: " << msg << std::endl
+#else
+#  define DEBUG(msg)
+#endif
+
+
 void
 SST::Core::Environment::configReadLine(FILE* theFile, char* lineBuffer)
 {
@@ -151,7 +159,7 @@ SST::Core::Environment::getSSTEnvironmentConfiguration(const std::vector<std::st
     else {
         prefixConfig = SST_INSTALL_PREFIX "/etc/sst/sstsimulator.conf";
     }
-
+    DEBUG("env: checking prefix: " << prefixConfig);
     SST::Core::Environment::populateEnvironmentConfig(prefixConfig, envConfig, true);
 
     // NEXT - USER HOME CONFIG
@@ -164,6 +172,7 @@ SST::Core::Environment::getSSTEnvironmentConfiguration(const std::vector<std::st
     }
 
     const std::string homeConfigPathStr(homeConfigPath);
+    DEBUG("env: checking home: " << homeConfigPathStr);
     populateEnvironmentConfig(homeConfigPathStr, envConfig, false);
 
     free(homeConfigPath);
@@ -183,6 +192,7 @@ SST::Core::Environment::getSSTEnvironmentConfiguration(const std::vector<std::st
         char* nextToken = strtok(envConfigPathBuffer, envConfigPathSep);
 
         while ( nullptr != nextToken ) {
+            DEBUG("env: checking env path: " << nextToken);
             populateEnvironmentConfig(nextToken, envConfig, true);
             nextToken = strtok(nullptr, envConfigPathSep);
         }
@@ -192,8 +202,9 @@ SST::Core::Environment::getSSTEnvironmentConfiguration(const std::vector<std::st
 
     // NEXT - override paths
     for ( std::string nextPath : overridePaths ) {
+        DEBUG("env: checking override path: " << nextPath);
         populateEnvironmentConfig(nextPath, envConfig, true);
     }
-
+    DEBUG("");
     return envConfig;
 }

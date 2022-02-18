@@ -96,11 +96,23 @@ main(int argc, char* argv[])
     // Parse the Command Line and get the Configuration Settings
     if ( g_configuration.parseCmdLine(argc, argv) ) { return -1; }
 
-    std::vector<std::string>               overridePaths;
-    Environment::EnvironmentConfiguration* sstEnv = Environment::getSSTEnvironmentConfiguration(overridePaths);
-    g_searchPath                                  = "";
-    std::set<std::string> groupNames              = sstEnv->getGroupNames();
 
+    std::cout << "Override paths:";
+    for (const auto & p : g_configuration.getOverridePaths())
+	{
+	    std::cout << "\n    " << p ;
+	}
+    std::cout << std::endl;
+
+    Environment::EnvironmentConfiguration* sstEnv = 
+	Environment::getSSTEnvironmentConfiguration
+	(g_configuration.getOverridePaths());
+
+    std::cout << "Resulting EnvConfig:\n";
+    sstEnv->print();
+
+    g_searchPath = "";
+    std::set<std::string> groupNames = sstEnv->getGroupNames();
     for ( auto groupItr = groupNames.begin(); groupItr != groupNames.end(); groupItr++ ) {
         SST::Core::Environment::EnvironmentConfigGroup* currentGroup = sstEnv->getGroupByName(*groupItr);
         std::set<std::string>                           groupKeys    = currentGroup->getKeys();
@@ -282,6 +294,7 @@ SSTInfoConfig::outputUsage()
     cout << "  -x, --xml                Generate XML data - default is off\n";
     cout << "  -o, --outputxml=FILE     File path to XML file. Default is SSTInfo.xml\n";
     cout << "  -l, --libs=LIBS          {all, <elementname>} - Element Library(s) to process\n";
+    cout << "  -L, --lib-path=LIBPATH   Read from LIBPATH instead of the default\n";
     cout << "  -q, --quiet              Quiet/print summary only\n";
     cout << endl;
 }
@@ -305,11 +318,12 @@ SSTInfoConfig::parseCmdLine(int argc, char* argv[])
                                               { "quiet", no_argument, nullptr, 'q' },
                                               { "outputxml", required_argument, nullptr, 'o' },
                                               { "libs", required_argument, nullptr, 'l' },
+                                              {"lib-path",    required_argument,  nullptr, 'L'},
                                               { "elemenfilt", required_argument, nullptr, 0 },
                                               { nullptr, 0, nullptr, 0 } };
     while ( 1 ) {
         int       opt_idx = 0;
-        const int intC    = getopt_long(argc, argv, "hvqdnxo:l:", longOpts, &opt_idx);
+        const int intC    = getopt_long(argc, argv, "hvqdnxo:l:L:", longOpts, &opt_idx);
         if ( intC == -1 ) break;
 
         const char c = static_cast<char>(intC);
@@ -337,10 +351,12 @@ SSTInfoConfig::parseCmdLine(int argc, char* argv[])
             m_XMLFilePath = optarg;
             break;
         case 'l':
-        {
             addFilter(optarg);
             break;
-        }
+	case 'L':
+	    std::cout << "Adding override path " << optarg << std::endl;
+	    m_overridePaths.push_back(optarg);
+	    break;
         case 0:
             if ( !strcmp(longOpts[opt_idx].name, "elemnfilt") ) { addFilter(optarg); }
             break;
