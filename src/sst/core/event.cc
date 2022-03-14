@@ -23,28 +23,60 @@ namespace SST {
 std::atomic<uint64_t>     SST::Event::id_counter(0);
 const SST::Event::id_type SST::Event::NO_ID = std::make_pair(0, -1);
 
+#if SST_EVENT_PROFILING
+
+#define SST_EVENT_PROFILE_REG						\
+  Simulation_impl* sim = Simulation_impl::getSimulation();		\
+  auto eventCount = sim->eventRecvCounters.find(getLastComponentName()); \
+  if ( eventCount == sim->eventRecvCounters.end() ) {			\
+    if ( getLastComponentName() != "" ) {					\
+      eventCount = sim->eventRecvCounters.insert(std::make_pair(getLastComponentName(), 1)).first; \
+      sim->eventHandlers.insert(std::make_pair(getLastComponentName(), 0)); \
+    }									\
+  }									\
+  auto eventSend = sim->eventSendCounters.find(getFirstComponentName()); \
+  if ( eventSend == sim->eventSendCounters.end() ) {			\
+    if ( getFirstComponentName() != "" ) {				\
+      eventSend = sim->eventSendCounters.insert(std::make_pair(getFirstComponentName(), 1)).first; \
+      sim->eventHandlers.insert(std::make_pair(getFirstComponentName(), 0)); \
+    }						                        \
+  }
+
 #if SST_HIGH_RESOLUTION_CLOCK
-#define SST_EVENT_PROFILE_START auto event_profile_eventStart = std::chrono::high_resolution_clock::now();
-#define SST_EVENT_PROFILE_STOP                                                                                         \
-    auto event_profile_eventFinish  = std::chrono::high_resolution_clock::now();                                       \
-    auto event_profile_eventHandler = sim->eventHandlers.find(getLastComponentName());                                 \
-    if ( event_profile_eventHandler != sim->eventHandlers.end() ) {                                                    \
-        event_profile_eventHandler->second +=                                                                          \
-            std::chrono::duration_cast<std::chrono::nanoseconds>(event_profile_eventFinish - event_profile_eventStart) \
-                .count();                                                                                              \
-    }
+#define SST_EVENT_PROFILE_START						\
+  auto event_profile_eventStart = std::chrono::high_resolution_clock::now(); \
+  SST_EVENT_PROFILE_REG
+
+#define SST_EVENT_PROFILE_STOP						\
+  auto event_profile_eventFinish  = std::chrono::high_resolution_clock::now(); \
+  auto event_profile_eventHandler = sim->eventHandlers.find(getLastComponentName()); \
+  if ( event_profile_eventHandler != sim->eventHandlers.end() ) {	\
+    event_profile_eventHandler->second +=				\
+      std::chrono::duration_cast<std::chrono::nanoseconds>(event_profile_eventFinish - event_profile_eventStart) \
+      .count();								\
+  }									\
+
 #else
 #define SST_EVENT_PROFILE_START                     \
-    struct timeval eventStart, eventEnd, eventDiff; \
-    gettimeofday(&eventStart, NULL);
-#define SST_EVENT_PROFILE_STOP                                                            \
-    gettimeofday(&eventEnd, NULL);                                                        \
-    timersub(&eventEnd, &eventStart, &eventDiff);                                         \
-    auto event_profile_eventHandler = sim->eventHandlers.find(getLastComponentName());    \
-    if ( event_profile_eventHandler != sim->eventHandlers.end() ) {                       \
-        event_profile_eventHandler->second += eventDiff.tv_usec + eventDiff.tv_sec * 1e6; \
-    }
+  struct timeval eventStart, eventEnd, eventDiff;   \
+  gettimeofday(&eventStart, NULL);		    \
+  SST_EVENT_PROFILE_REG
+
+#define SST_EVENT_PROFILE_STOP						\
+  gettimeofday(&eventEnd, NULL);					\
+  timersub(&eventEnd, &eventStart, &eventDiff);				\
+  auto event_profile_eventHandler = sim->eventHandlers.find(getLastComponentName()); \
+  if ( event_profile_eventHandler != sim->eventHandlers.end() ) {	\
+    event_profile_eventHandler->second += eventDiff.tv_usec + eventDiff.tv_sec * 1e6; \
+  }									\
+
 #endif
+
+#else
+#define SST_EVENT_PROFILE_START
+#define SST_EVENT_PROFILE_STOP
+#endif
+
 
 Event::~Event() {}
 
@@ -52,37 +84,12 @@ void
 Event::execute(void)
 {
 
-#if SST_EVENT_PROFILING
     SST_EVENT_PROFILE_START
-#endif
 
         (*reinterpret_cast<HandlerBase*>(delivery_info))
     (this);
 
-#if SST_EVENT_PROFILING
-    Simulation_impl* sim = Simulation_impl::getSimulation();
-
-    SST_EVENT_PROFILE_STOP
-
-    // Track sending and receiving counters
-    auto eventCount = sim->eventRecvCounters.find(getLastComponentName());
-    if ( eventCount != sim->eventRecvCounters.end() ) { eventCount->second++; }
-    else {
-        if ( getLastComponentName() != "" ) {
-            sim->eventRecvCounters.insert(std::pair<std::string, uint64_t>(getLastComponentName(), 1));
-            sim->eventHandlers.insert(std::pair<std::string, uint64_t>(getLastComponentName(), 0));
-        }
-    }
-    auto eventSend = sim->eventSendCounters.find(getFirstComponentName());
-    if ( eventSend != sim->eventSendCounters.end() ) { eventSend->second++; }
-    else {
-        // Insert handler and counter for the subcomponent so that all link traffic is monitored
-        if ( getFirstComponentName() != "" ) {
-            sim->eventSendCounters.insert(std::pair<std::string, uint64_t>(getFirstComponentName(), 1));
-            sim->eventHandlers.insert(std::pair<std::string, uint64_t>(getFirstComponentName(), 0));
-        }
-    }
-#endif
+    SST_EVENT_PROFILE_STOP;
 }
 
 Event*
