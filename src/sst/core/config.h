@@ -292,7 +292,10 @@ public:
 
 
     /** Print to stdout the current configuration */
-    void print();
+    void print() const;
+
+    /** Print to the Output stream the current configuration */
+    void print(Output & out) const;
 
     void serialize_order(SST::Core::Serialization::serializer& ser) override
     {

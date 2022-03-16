@@ -29,7 +29,9 @@ REENABLE_WARNING
 #include <errno.h>
 #include <getopt.h>
 #include <iostream>
+#include <iomanip>
 #include <locale>
+#include <sstream>
 #include <string>
 #include <sys/ioctl.h>
 #include <sys/stat.h>
@@ -524,7 +526,7 @@ public:
 //// Config Class functions
 
 void
-Config::print()
+Config::print() const
 {
     std::cout << "verbose = " << verbose_ << std::endl;
     std::cout << "num_threads = " << world_size_.thread << std::endl;
@@ -560,6 +562,77 @@ Config::print()
     std::cout << "print_env" << print_env_ << std::endl;
     std::cout << "enable_sig_handling = " << enable_sig_handling_ << std::endl;
     std::cout << "no_env_config = " << no_env_config_ << std::endl;
+}
+
+void
+Config::print(Output & out) const
+{
+  std::stringstream ss;
+
+#define OUT(s) \
+  out.verbose(CALL_INFO, 1, 0, "%s\n", s)
+
+#define OUTCV(c, v)						\
+  std::stringstream().swap(ss);					\
+  ss << std::boolalpha << "Config: "				\
+     << std::setw(25) << std::left << c << " = " << v;		\
+  OUT(ss.str().c_str())
+
+    OUT( "# ------------------------------------------------------------");
+    OUT( "# Configuration");
+
+    OUTCV( "run_name", run_name);
+    OUTCV( "verbose", verbose_);
+    OUTCV( "num_threads", world_size_.thread);
+    OUTCV( "num_ranks", world_size_.rank);
+    OUTCV( "configFile", configFile_);
+    OUTCV( "model_options", model_options_);
+    OUTCV( "print_timing", print_timing_);
+    OUTCV( "stop_at", stop_at_);
+    OUTCV( "exit_after", exit_after_);
+    OUTCV( "partitioner", partitioner_);
+    OUTCV( "heartbeatPeriod", heartbeatPeriod_);
+    OUTCV( "output_directory", output_directory_);
+    OUTCV( "output_core_prefix", output_core_prefix_);
+    OUTCV( "output_config_graph", output_config_graph_);
+    OUTCV( "output_json", output_json_);
+    OUTCV( "parallel_output", parallel_output_);
+    OUTCV( "output_dot", output_dot_);
+    OUTCV( "dot_verbosity", dot_verbosity_);
+    OUTCV( "component_partition_file", component_partition_file_);
+    OUTCV( "output_partition", output_partition_);
+    OUTCV( "timeBase", timeBase_);
+    OUTCV( "parallel_load", parallel_load_);
+    OUTCV( "parallel_load_mode_multi", parallel_load_mode_multi_);
+    OUTCV( "timeVortex", timeVortex_);
+    OUTCV( "interthread_links", interthread_links_);
+    OUTCV( "debugFile", debugFile_);
+    OUTCV( "libpath", libpath_);
+    OUTCV( "addLlibPath", addLibPath_);
+
+    std::string rMode;
+    switch (runMode_) {
+    case Simulation::INIT:     rMode = "INIT";  break;
+    case Simulation::RUN:      rMode = "RUN";   break;
+    case Simulation::BOTH:     rMode = "BOTH";  break;
+    case Simulation::UNKNOWN:  
+      [[fallthrough]];
+    default:                   rMode = "UNKNOWN";
+    };
+    OUTCV( "runMode", rMode);
+
+#ifdef USE_MEMPOOL
+    OUTCV( "event_dump_file", event_dump_file_);   // not ser
+#endif
+    OUTCV( "rank_seq_startup_ ", rank_seq_startup_);  // not ser
+    OUTCV( "print_env",  print_env_);
+    OUTCV( "enable_sig_handling", enable_sig_handling_);
+    OUTCV( "no_env_config", no_env_config_);
+
+    OUT( "# ------------------------------------------------------------\n");
+
+#undef OUTCV
+#undef OUT
 }
 
 
