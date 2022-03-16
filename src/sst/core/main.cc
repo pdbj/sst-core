@@ -783,6 +783,9 @@ main(int argc, char* argv[])
 
     ///// End Set up StatisticEngine /////
 
+    /* Print configuration if verbose */
+    if ( myRank.rank == 0 ) { cfg.print(g_output); }
+
     ////// Create Simulation //////
     Core::ThreadSafe::Barrier mainBarrier(world_size.thread);
 
