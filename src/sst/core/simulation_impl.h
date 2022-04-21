@@ -312,6 +312,10 @@ public:
   void incrementExchangeCounters(uint64_t events, uint64_t bytes);
 #endif
 
+#if SST_SYNC_PROFILING
+    void incrementSyncTime(bool rankSync, uint64_t count);
+#endif
+
     // private:
 
     friend class Link;
@@ -428,10 +432,11 @@ public:
 #endif
 
 #if SST_SYNC_PROFILING
-    uint64_t syncCounter     = 0;
-    uint64_t rankSyncTime    = 0;
-    uint64_t threadSyncTime  = 0;
-    uint64_t rankSyncCounter = 0;
+    uint64_t rankSyncCounter   = 0;  // Num. of rank syncs
+    uint64_t rankSyncTime      = 0;  // Total time rank syncing, in ns
+    uint64_t threadSyncCounter = 0;  // Num. of thread syncs
+    uint64_t threadSyncTime    = 0;  // Total time thread syncing, in ns
+                                     // Does not include thread syncs as part of rank syncs
 #endif
 
 #if SST_HIGH_RESOLUTION_CLOCK

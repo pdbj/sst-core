@@ -1052,6 +1052,21 @@ Simulation_impl::incrementExchangeCounters(uint64_t events, uint64_t bytes)
 }
 #endif
 
+#if SST_SYNC_PROFILING
+void
+Simulation_impl::incrementSyncTime(bool rankSync, uint64_t count)
+{
+  if (rankSync) {
+          ++rankSyncCounter;
+          rankSyncTime += count;
+  }
+  else {
+          ++threadSyncCounter;
+          threadSyncTime += count;
+  }
+}
+#endif
+
 // Function to allow for easy serialization of threads while debugging
 // code
 void
@@ -1211,19 +1226,38 @@ Simulation_impl::printPerformanceInfo()
     fprintf(fp, "Rank average event bytes sent: %.6f bytes/event\n",
             (rankExchangeEvents == 0 ? 0.0 :
              (double)rankExchangeBytes / rankExchangeEvents));
+    fprintf(fp, "\n");
 #endif
 
 #if SST_SYNC_PROFILING
-    fprintf(fp, "Synchronization Information\n");
-    fprintf(fp, "Thread Sync time: %.6fs\n", (double)threadSyncTime / clockDivisor);
-    fprintf(fp, "Rank Sync time: %.6fs\n", (double)rankSyncTime / clockDivisor);
-    fprintf(fp, "Sync Counter: %llu\n", syncCounter);
-    if ( syncCounter != 0 ) {
-        fprintf(
-            fp, "Average Sync Time: %llu%s\n", (threadSyncTime + rankSyncTime) / syncCounter, clockResolution.c_str());
-    }
+    fprintf(fp, "Synchronization Information:\n");
+    fprintf(fp, "Thread-only sync (apart from Rank syncs):\n");
+    fprintf(fp, "Thread-sync count: %" PRIu64 "\n", threadSyncCounter);
+    fprintf(fp, "Thread-sync total execution time: %.6f s\n",
+            (double)threadSyncTime / clockDivisor);
+    fprintf(fp, "Thread-sync average execution time: %.6f %s/sync\n",
+            (threadSyncCounter == 0.0 ? 0.0 :
+             (double)threadSyncTime / threadSyncCounter),
+            clockResolution.c_str());
+    fprintf(fp, "Rank Sync (including associated thread syncs):\n");
+    fprintf(fp, "Rank sync count: %" PRIu64 "\n", rankSyncCounter);
+    fprintf(fp, "Rank sync total execution time: %.6f s\n",
+            (double)rankSyncTime / clockDivisor);
+    fprintf(fp, "Rank sync average execution time: %.6f %s/sync\n",
+            (rankSyncCounter == 0.0 ? 0.0 :
+             (double)rankSyncTime / rankSyncCounter),
+            clockResolution.c_str());
+    fprintf(fp, "All sync count:  %" PRIu64 "\n",
+            threadSyncCounter + rankSyncCounter);
+    fprintf(fp, "All sync execution time: %.6f s\n",
+            (double)(threadSyncTime + rankSyncTime) / clockDivisor);
+    fprintf(fp, "All sync average execution time: %.6f %s/sync\n",
+            ( (threadSyncCounter + rankSyncCounter) == 0 ? 0.0 :
+              (double)(threadSyncTime + rankSyncTime) / (threadSyncCounter + rankSyncCounter)),
+            clockResolution.c_str());
+
     fprintf(fp, "\n");
-#endif
+#endif  // SST_SYNC_PROFILING
 }
 #endif
 
