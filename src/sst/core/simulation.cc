@@ -1155,30 +1155,41 @@ Simulation_impl::printPerformanceInfo()
 #endif  // SST_CLOCK_PROFILING
 
 #if SST_EVENT_PROFILING
-    fprintf(fp, "Communication Counters\n");
-    for ( auto it = eventHandlers.begin(); it != eventHandlers.end(); ++it ) {
-        fprintf(fp, "Component %s\n", it->first.c_str());
+    fprintf(fp, "Communication Counters:\n");
+    for ( const auto & handler : eventHandlers ) {
+        const std::string & comp = handler.first;
+        fprintf(fp, "Component Name: %s\n", comp.c_str());
 
         // Look up event send and receive counters
-        auto eventSend = eventSendCounters.find(it->first.c_str());
-        auto eventRecv = eventRecvCounters.find(it->first.c_str());
-        if ( eventSend != eventSendCounters.end() ) {
-            fprintf(fp, "Messages Sent within rank: %" PRIu64 "\n", eventSend->second);
+        uint64_t eventSends{0};
+        auto eventSendIterator = eventSendCounters.find(comp);
+        if ( eventSendIterator != eventSendCounters.end() ) {
+            eventSends = eventSendIterator->second;
         }
-        if ( eventRecv != eventRecvCounters.end() ) { fprintf(fp, "Messages Recv: %" PRIu64 "\n", eventRecv->second); }
+        fprintf(fp, "Component events sent: %" PRIu64 "\n", eventSends);
+
+        uint64_t eventRecvs{0};
+        auto eventRecvIterator = eventRecvCounters.find(comp);
+        if ( eventRecvIterator != eventRecvCounters.end() ) {
+            eventRecvs = eventRecvIterator->second;
+        }
+        fprintf(fp, "Component events received: %" PRIu64 "\n", eventRecvs);
 
         // Look up runtimes for event handler
-        auto eventTime = eventHandlers.find(it->first.c_str());
-        if ( eventTime != eventHandlers.end() ) {
-            fprintf(fp, "Time spent on message: %.6fs\n", (double)eventTime->second / clockDivisor);
-            if ( it->second != 0 ) {
-                fprintf(fp, "Average message time: %" PRIu64 "%s\n", eventTime->second / it->second, clockResolution.c_str());
-            }
-            else {
-                fprintf(fp, "Average message time: 0%s\n", clockResolution.c_str());
-            }
+        double eventTimer{0};
+        auto eventTimeIterator = eventHandlers.find(comp);
+        if ( eventTimeIterator != eventHandlers.end() ) {
+            eventTimer = (double)eventTimeIterator->second;
         }
+        fprintf(fp, "Component total event handler execution time: %.6f s\n",
+                eventTimer / clockDivisor);
+
+        fprintf(fp, "Component average event execution time: %.6f %s/event\n\n",
+                (eventRecvs == 0 ? 0.0 : eventTimer / eventRecvs),
+                clockResolution.c_str());
     }
+    fprintf(fp, "\n");
+#endif  // SST_EVENT_PROFILING
 
     // Rank only information
     fprintf(fp, "Rank Statistics\n");
