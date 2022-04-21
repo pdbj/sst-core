@@ -1082,7 +1082,10 @@ void
 Simulation_impl::printPerformanceInfo()
 {
 #if SST_RUNTIME_PROFILING
-    fprintf(fp, "///Print at %.6fs\n", (double)runtime / clockDivisor);
+    fprintf(fp, "///Print at run time %.6f s, simulation time %" PRIu64 " %s\n",
+            (double)runtime / clockDivisor,
+            currentSimCycle,
+            clockResolution.c_str());
 #endif
 
 // Iterate through components and find all handlers mapped to that component
