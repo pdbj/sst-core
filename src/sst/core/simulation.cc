@@ -1096,43 +1096,63 @@ Simulation_impl::printPerformanceInfo()
 // Iterate through components and find all handlers mapped to that component
 // If handler mapping is not populated, prints out raw clock handler times
 #if SST_CLOCK_PROFILING
-    fprintf(fp, "Clock Handlers\n");
-    if ( handler_mapping.empty() ) {
-        for ( auto it = clockHandlers.begin(); it != clockHandlers.end(); ++it ) {
-            fprintf(fp, "%u runtime: %.6f\n", it->first, (double)it->second / 1e9);
+    fprintf(fp, "Clock Handlers:\n");
+
+    // Find clock handlers not associated with a component
+    std::set<SST::HandlerId_t> free_handlers;
+    for ( const auto & clock : clockHandlers ) {
+        if (handler_mapping.find(clock.first) == handler_mapping.end()) {
+            free_handlers.insert(clock.first);
         }
     }
-    else {
-        for ( auto iter = compInfoMap.begin(); iter != compInfoMap.end(); ++iter ) {
-            uint64_t exec_time = 0;
-            uint64_t counters  = 0;
+    // Log the free clock handlers
+    fprintf(fp, "Clock Handlers not associated with a Component\n");
+    for ( const auto & clockId : free_handlers ) {
+        auto exec_time = clockHandlers.find(clockId)->second / 1e9;
+        auto count = clockCounters.find(clockId)->second;
+        fprintf(fp, "Handler id %" PRIu32 ", count %" PRIu64 ", runtime: %.6f, average: %.6f %s/tick\n",
+                clockId, count, exec_time,
+                (count == 0 ? 0.0 : exec_time / count),
+                clockResolution.c_str());
+    }
+    fprintf(fp, "\n");
 
-            // Go through all the clock handler to component id mappings
-            // Each component may have multiple clock handlers
-            for ( auto it = handler_mapping.cbegin(); it != handler_mapping.cend(); ++it ) {
-                // If this clock handler is mapped to a component
-                if ( (*iter)->getID() == it->second ) {
-                    auto handlerIterator = clockHandlers.find(it->first);
-                    if ( handlerIterator != clockHandlers.end() ) { exec_time += handlerIterator->second; }
+    // Now log clock handlers mapped to components
+    fprintf(fp, "Clock Handlers associated with Components:\n");
+    for ( const auto & comp : compInfoMap ) {
+        auto compId = comp->getID();
+        uint64_t exec_time = 0;
+        uint64_t counters  = 0;
+        HandlerId_t clockId = 0;
 
-                    auto counterIterator = clockCounters.find(it->first);
-                    if ( counterIterator != clockCounters.end() ) { counters += counterIterator->second; }
+        // Go through all the clock handler to component id mappings
+        // Each component may have multiple clock handlers
+        for ( const auto & handler : handler_mapping ) {
+            // If this clock handler is mapped to a component
+            if ( compId == handler.second ) {
+                auto handlerIterator = clockHandlers.find(handler.first);
+                if ( handlerIterator != clockHandlers.end() ) {
+                    clockId = handlerIterator->first;
+                    exec_time += handlerIterator->second;
                 }
-            }
-
-            fprintf(fp, "Component Name %s\n", (*iter)->getName().c_str());
-            fprintf(fp, "Clock Handler Counter: %" PRIu64 "\n", counters);
-            fprintf(fp, "Clock Handler Runtime: %.6fs\n", (double)exec_time / clockDivisor);
-            if ( counters != 0 ) {
-                fprintf(fp, "Clock Handler Average: %" PRIu64 "%s\n\n", exec_time / counters, clockResolution.c_str());
-            }
-            else {
-                fprintf(fp, "Clock Handler Average: 0%s\n\n", clockResolution.c_str());
+                auto counterIterator = clockCounters.find(handler.first);
+                if ( counterIterator != clockCounters.end() ) {
+                    counters += counterIterator->second;
+                }
+                fprintf(fp, "Component Name: %s\n", comp->getName().c_str());
+                fprintf(fp, "Clock Handler id: %" PRIu32 "\n", clockId);
+                fprintf(fp, "Clock Handler execution count: %" PRIu64 "\n",
+                        counters);
+                fprintf(fp, "Clock Handler total execution time: %.6f s\n",
+                        (double)exec_time / clockDivisor);
+                fprintf(fp, "Clock Handler average execution time: %.6f %s/tick\n\n",
+                        (counters == 0 ? 0.0 : (double)exec_time / counters),
+                        clockResolution.c_str());
             }
         }
     }
     fprintf(fp, "\n");
-#endif
+#endif  // SST_CLOCK_PROFILING
 
 #if SST_EVENT_PROFILING
     fprintf(fp, "Communication Counters\n");
