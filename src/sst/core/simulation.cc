@@ -1044,6 +1044,12 @@ Simulation_impl::incrementEventHandlerTime(const std::string & component,
         eventHandlers.insert(std::make_pair(component, count));
     }
 }
+void
+Simulation_impl::incrementExchangeCounters(uint64_t events, uint64_t bytes)
+{
+    rankExchangeEvents += events;
+    rankExchangeBytes += bytes;
+}
 #endif
 
 // Function to allow for easy serialization of threads while debugging
@@ -1191,16 +1197,20 @@ Simulation_impl::printPerformanceInfo()
     fprintf(fp, "\n");
 #endif  // SST_EVENT_PROFILING
 
+#if SST_EVENT_PROFILING
     // Rank only information
-    fprintf(fp, "Rank Statistics\n");
-    fprintf(fp, "Message transfer size : %" PRIu64 "\n", messageXferSize);
-    fprintf(fp, "Latency : %" PRIu64 "\n", rankLatency);
-    fprintf(fp, "Counter : %" PRIu64 "\n", rankExchangeCounter);
-    if ( rankExchangeCounter != 0 ) { fprintf(fp, "Avg : %" PRIu64 "ns\n", rankLatency / rankExchangeCounter); }
-    else {
-        fprintf(fp, "Avg : 0\n");
-    }
-    fprintf(fp, "\n");
+    fprintf(fp, "Serialization Information:\n");
+    fprintf(fp, "Rank total serialization time: %" PRIu64 " %s\n",
+            rankLatency, clockResolution.c_str());
+    fprintf(fp, "Rank pairwise sync count: %" PRIu64 "\n", rankExchangeCounter);
+    fprintf(fp, "Rank total events sent: %" PRIu64 "\n", rankExchangeEvents);
+    fprintf(fp, "Rank total bytes sent: %" PRIu64 "\n", rankExchangeBytes);
+    fprintf(fp, "Rank average sync bytes sent: %.6f bytes/sync\n",
+            (rankExchangeCounter == 0 ? 0.0 :
+             (double)rankExchangeBytes / rankExchangeCounter));
+    fprintf(fp, "Rank average event bytes sent: %.6f bytes/event\n",
+            (rankExchangeEvents == 0 ? 0.0 :
+             (double)rankExchangeBytes / rankExchangeEvents));
 #endif
 
 #if SST_SYNC_PROFILING
