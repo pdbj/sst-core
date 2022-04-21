@@ -997,6 +997,15 @@ Simulation_impl::registerClockHandler(SST::ComponentId_t id, SST::HandlerId_t ha
 {
     handler_mapping.insert(std::make_pair(handler, id));
 }
+
+void
+Simulation_impl::incrementClockCounters(Clock::HandlerBase* handler, uint64_t count)
+{
+    auto clockHandler = clockHandlers.find(handler->getId());
+    clockHandler->second += count;
+    auto clockCounter = clockCounters.find(handler->getId());
+    clockCounter->second++;
+}
 #endif
 
 #if SST_EVENT_PROFILING

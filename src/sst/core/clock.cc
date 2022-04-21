@@ -21,23 +21,34 @@
 
 namespace SST {
 
+#if SST_CLOCK_PROFILING
+
 #if SST_HIGH_RESOLUTION_CLOCK
-#define SST_CLOCK_PROFILE_START auto sst_clock_profile_start = std::chrono::high_resolution_clock::now();
+
+#define SST_CLOCK_PROFILE_START \
+    auto sst_clock_profile_start = std::chrono::high_resolution_clock::now()
+
 #define SST_CLOCK_PROFILE_STOP                                                                                   \
     auto sst_clock_profile_finish = std::chrono::high_resolution_clock::now();                                   \
-    auto sst_clock_profile_it     = sim->clockHandlers.find(handler->getId());                                   \
-    sst_clock_profile_it->second +=                                                                              \
-        std::chrono::duration_cast<std::chrono::nanoseconds>(sst_clock_profile_finish - sst_clock_profile_start) \
-            .count();
+    auto sst_clock_profile_count = \
+      std::chrono::duration_cast<std::chrono::nanoseconds>(sst_clock_profile_finish - sst_clock_profile_start).count(); \
+    sim->incrementClockCounters(handler, sst_clock_profile_count)
+
 #else
+
 #define SST_CLOCK_PROFILE_START                     \
     struct timeval clockStart, clockEnd, clockDiff; \
-    gettimeofday(&clockStart, NULL);
+    gettimeofday(&clockStart, NULL)
+
 #define SST_CLOCK_PROFILE_STOP                                             \
     gettimeofday(&clockEnd, NULL);                                         \
     timersub(&clockEnd, &clockStart, &clockDiff);                          \
-    auto sst_clock_profile_it = sim->clockHandlers.find(handler->getId()); \
-    sst_clock_profile_it->second += clockDiff.tv_usec + clockDiff.tv_sec * 1e6;
+    auto sst_clock_profile_count = clockDiff.tv_usec + clockDiff.tv_sec * 1e6; \
+    sim->incrementClockCounters(handler, sst_clock_profile_count)
+#endif
+#else
+#define SST_CLOCK_PROFILE_START
+#define SST_CLOCK_PROFILE_STOP
 #endif
 
 Clock::Clock(TimeConverter* period, int priority) : Action(), currentCycle(0), period(period), scheduled(false)
@@ -105,25 +116,16 @@ Clock::execute(void)
     for ( sop_iter = staticHandlerMap.begin(); sop_iter != staticHandlerMap.end(); ) {
         Clock::HandlerBase* handler = *sop_iter;
 
+        SST_CLOCK_PROFILE_START;
 
-#if SST_CLOCK_PROFILING
-        SST_CLOCK_PROFILE_START
-#endif
+	bool done = (*handler)(currentCycle);
 
-        if ( (*handler)(currentCycle) )
+        SST_CLOCK_PROFILE_STOP;
+
+        if ( done )
             sop_iter = staticHandlerMap.erase(sop_iter);
         else
             ++sop_iter;
-
-#if SST_CLOCK_PROFILING
-        SST_CLOCK_PROFILE_STOP
-
-        auto iter = sim->clockCounters.find(handler->getId());
-        if ( iter != sim->clockCounters.end() ) { iter->second++; }
-#endif
-
-        // (*handler)(currentCycle);
-        // ++sop_iter;
     }
 
     next = sim->getCurrentSimCycle() + period->getFactor();

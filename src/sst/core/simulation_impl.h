@@ -299,7 +299,9 @@ public:
 
 #if SST_CLOCK_PROFILING
     void registerClockHandler(SST::ComponentId_t id, HandlerId_t handler);
+    void incrementClockCounters(Clock::HandlerBase* handler, uint64_t count);
 #endif
+
 #if SST_EVENT_PROFILING
 private:
     typedef std::map<std::string, uint64_t> eventCounter_t;
@@ -409,8 +411,9 @@ public:
 
 #if SST_CLOCK_PROFILING
     std::map<SST::HandlerId_t, SST::ComponentId_t> handler_mapping;
-    std::map<SST::HandlerId_t, uint64_t> clockHandlers;
-    std::map<SST::HandlerId_t, uint64_t> clockCounters;
+    typedef std::map<SST::HandlerId_t, uint64_t> clockCounter_t;
+    clockCounter_t clockHandlers;  // Total execution time
+    clockCounter_t clockCounters;  // Total execution count
 #endif
 
 #if SST_EVENT_PROFILING
