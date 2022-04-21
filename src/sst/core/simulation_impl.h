@@ -309,6 +309,7 @@ private:
 public:
     void incrementEventCounters(const std::string & sendComponent, const std::string & recvComponent);
     void incrementEventHandlerTime(const std::string & component, uint64_t count);
+  void incrementExchangeCounters(uint64_t events, uint64_t bytes);
 #endif
 
     // private:
@@ -419,10 +420,11 @@ public:
 #if SST_EVENT_PROFILING
     uint64_t                        rankLatency         = 0;
     uint64_t                        rankExchangeCounter = 0;
+    uint64_t       rankExchangeBytes   = 0;  // Serialization size
+    uint64_t       rankExchangeEvents  = 0;  // Serialized events
     eventCounter_t eventHandlers;
     eventCounter_t eventRecvCounters;
     eventCounter_t eventSendCounters;
-    uint64_t       messageXferSize = 0;
 #endif
 
 #if SST_SYNC_PROFILING
