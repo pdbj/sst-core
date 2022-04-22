@@ -673,9 +673,7 @@ Simulation_impl::run()
         currentPriority  = current_activity->getPriority();
         current_activity->execute();
 
-#if SST_PERIODIC_PRINT
-        periodicCounter++;
-#endif
+        // printf("%d: Activity at %" PRIu64 "\n",my_rank.rank,currentSimCycle);
 
         if ( UNLIKELY(0 != lastRecvdSignal) ) {
             switch ( lastRecvdSignal ) {
@@ -701,7 +699,7 @@ Simulation_impl::run()
         }
 
 #if SST_PERIODIC_PRINT
-        if ( periodicCounter >= SST_PERIODIC_PRINT_THRESHOLD ) {
+        if ( ++periodicCounter >= SST_PERIODIC_PRINT_THRESHOLD ) {
 #if SST_RUNTIME_PROFILING
 #if SST_HIGH_RESOLUTION_CLOCK
             auto finish = std::chrono::high_resolution_clock::now();
