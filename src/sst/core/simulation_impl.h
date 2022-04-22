@@ -200,6 +200,8 @@ public:
     bool isIndependentThread() { return independent; }
 
     void printPerformanceInfo();
+    void printPerformanceInfoCsv(FILE * fp);
+
 
     /** Register a OneShot event to be called after a time delay
         Note: OneShot cannot be canceled, and will always callback after
