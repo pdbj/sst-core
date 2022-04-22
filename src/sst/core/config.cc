@@ -1124,6 +1124,7 @@ Config::parseCmdLine(int argc, char* argv[])
 
             case 'h':
                 helper.clean_exit = true;
+                [[fallthrough]];
 
             default:
                 ok = helper.usage();
