@@ -1044,6 +1044,13 @@ Simulation_impl::incrementEventHandlerTime(const std::string & component,
         eventHandlers.insert(std::make_pair(component, count));
     }
 }
+
+void
+Simulation_impl::incrementSerialCounters(uint64_t count)
+{
+    rankLatency += count;
+    ++rankExchangeCounter;
+}
 void
 Simulation_impl::incrementExchangeCounters(uint64_t events, uint64_t bytes)
 {
@@ -1220,14 +1227,22 @@ Simulation_impl::printPerformanceInfo()
     fprintf(fp, "Rank pairwise sync count: %" PRIu64 "\n", rankExchangeCounter);
     fprintf(fp, "Rank total events sent: %" PRIu64 "\n", rankExchangeEvents);
     fprintf(fp, "Rank total bytes sent: %" PRIu64 "\n", rankExchangeBytes);
+    fprintf(fp, "Rank average sync serialization time: %.6f %s/sync\n",
+            (rankExchangeCounter == 0 ? 0.0 :
+             (double)rankLatency / rankExchangeCounter),
+            clockResolution.c_str());
     fprintf(fp, "Rank average sync bytes sent: %.6f bytes/sync\n",
             (rankExchangeCounter == 0 ? 0.0 :
              (double)rankExchangeBytes / rankExchangeCounter));
+    fprintf(fp, "Rank average event serialization time: %.6f %s/event\n",
+            (rankExchangeEvents == 0 ? 0.0 :
+             (double)rankLatency / rankExchangeEvents),
+            clockResolution.c_str());
     fprintf(fp, "Rank average event bytes sent: %.6f bytes/event\n",
             (rankExchangeEvents == 0 ? 0.0 :
              (double)rankExchangeBytes / rankExchangeEvents));
     fprintf(fp, "\n");
-#endif
+#endif // SST_EVENT_PROFILING
 
 #if SST_SYNC_PROFILING
     fprintf(fp, "Synchronization Information:\n");
