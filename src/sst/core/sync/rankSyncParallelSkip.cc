@@ -32,17 +32,20 @@
 namespace SST {
 
 #if SST_EVENT_PROFILING
-#define SST_EVENT_PROFILE_START auto event_profile_start = std::chrono::high_resolution_clock::now();
-#define SST_EVENT_PROFILE_STOP                                                                                    \
-    Simulation_impl* event_profile_simImpl = Simulation_impl::getSimulation();                                    \
-    auto             event_profile_finish  = std::chrono::high_resolution_clock::now();                           \
-    event_profile_simImpl->rankLatency +=                                                                         \
-        std::chrono::duration_cast<std::chrono::nanoseconds>(event_profile_finish - event_profile_start).count(); \
-    event_profile_simImpl->rankExchangeCounter++;
+
+#define SST_EVENT_PROFILE_START                                         \
+    auto event_profile_start = std::chrono::high_resolution_clock::now()
+
+#define SST_EVENT_PROFILE_STOP                                          \
+    auto event_profile_stop  = std::chrono::high_resolution_clock::now(); \
+    auto event_profile_count = std::chrono::duration_cast<std::chrono::nanoseconds>(event_profile_stop - event_profile_start).count(); \
+    sim->incrementSerialCounters(event_profile_count)
+
 #else
 #define SST_EVENT_PROFILE_START
 #define SST_EVENT_PROFILE_STOP
 #endif
+
 
 // Static Data Members
 SimTime_t RankSyncParallelSkip::myNextSyncTime = 0;
@@ -173,15 +176,16 @@ RankSyncParallelSkip::exchange_slave(int thread)
 
     // Check the serialize_queue for work.
     comm_send_pair* ser;
+    Simulation_impl* sim = Simulation_impl::getSimulation();
 
     while ( serialize_queue.try_remove(ser) ) {
-        // Serialize the events
-        // Measures Latency
-        SST_EVENT_PROFILE_START
+        // Measures serialization time
+        SST_EVENT_PROFILE_START;
 
+        // Serialize the events
         ser->sbuf = ser->squeue->getData();
 
-        SST_EVENT_PROFILE_STOP
+        SST_EVENT_PROFILE_STOP;
 
         // Send back to master to do MPI send
         send_queue.try_insert(ser);
@@ -193,7 +197,6 @@ RankSyncParallelSkip::exchange_slave(int thread)
 
     // Do nothing until there are events to be sent on this thread's
     // links
-    Simulation* sim           = Simulation_impl::getSimulation();
     SimTime_t   current_cycle = sim->getCurrentSimCycle();
 
     // Two things left to do.  Deserialize receives and send
@@ -232,6 +235,7 @@ RankSyncParallelSkip::exchange_master(int UNUSED(thread))
     // of ranks I communicate with (1 recv, 2 sends per rank)
     MPI_Request sreqs[2 * comm_send_map.size()];
     int         sreq_count = 0;
+    Simulation_impl* UNUSED(sim) = Simulation_impl::getSimulation();
 
     // First thing to do is fill the serialize_queue.
     for ( auto i = comm_send_map.begin(); i != comm_send_map.end(); ++i ) {
@@ -281,10 +285,12 @@ RankSyncParallelSkip::exchange_master(int UNUSED(thread))
                 &sreqs[sreq_count++]);
         }
         else if ( serialize_queue.try_remove(send) ) {
+            SST_EVENT_PROFILE_START;
+
             // Serialize the events
-            SST_EVENT_PROFILE_START
             send->sbuf = send->squeue->getData();
-            SST_EVENT_PROFILE_STOP
+
+            SST_EVENT_PROFILE_STOP;
 
             // Send back to master to do MPI send
             send_queue.try_insert(send);
@@ -382,9 +388,7 @@ RankSyncParallelSkip::exchangeLinkUntimedData(int UNUSED_WO_MPI(thread), std::at
 
         // Do all the sends
         // Get the buffer from the syncQueue
-        SST_EVENT_PROFILE_START
         char* send_buffer = i->second.squeue->getData();
-        SST_EVENT_PROFILE_STOP
 
         // Cast to Header so we can get/fill in data
         SyncQueue::Header* hdr = reinterpret_cast<SyncQueue::Header*>(send_buffer);
