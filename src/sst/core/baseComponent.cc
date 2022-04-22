@@ -114,12 +114,7 @@ BaseComponent::registerClock(const std::string& freq, Clock::HandlerBase* handle
 {
     TimeConverter* tc = Simulation_impl::getSimulation()->registerClock(freq, handler, CLOCKPRIORITY);
 
-    // if regAll is true set tc as the default for the component and
-    // for all the links
-    if ( regAll ) {
-        setDefaultTimeBaseForLinks(tc);
-        my_info->defaultTimeBase = tc;
-    }
+    registerClockBase(tc, handler, regAll);
     return tc;
 }
 
@@ -128,12 +123,7 @@ BaseComponent::registerClock(const UnitAlgebra& freq, Clock::HandlerBase* handle
 {
     TimeConverter* tc = Simulation_impl::getSimulation()->registerClock(freq, handler, CLOCKPRIORITY);
 
-    // if regAll is true set tc as the default for the component and
-    // for all the links
-    if ( regAll ) {
-        setDefaultTimeBaseForLinks(tc);
-        my_info->defaultTimeBase = tc;
-    }
+    registerClockBase(tc, handler, regAll);
     return tc;
 }
 
@@ -142,16 +132,24 @@ BaseComponent::registerClock(TimeConverter* tc, Clock::HandlerBase* handler, boo
 {
     TimeConverter* tcRet = Simulation_impl::getSimulation()->registerClock(tc, handler, CLOCKPRIORITY);
 
+    registerClockBase(tcRet, handler, regAll);
+    return tcRet;
+}
+
+void
+BaseComponent::registerClockBase(TimeConverter* tc, Clock::HandlerBase* UNUSED(handler), bool regAll)
+{
+#if SST_CLOCK_PROFILING
     // Register this clock handler with the performance counters
     Simulation_impl::getSimulation()->registerClockHandler(my_info->id, handler->getId());
+#endif
 
     // if regAll is true set tc as the default for the component and
     // for all the links
     if ( regAll ) {
-        setDefaultTimeBaseForLinks(tcRet);
-        my_info->defaultTimeBase = tcRet;
+        setDefaultTimeBaseForLinks(tc);
+        my_info->defaultTimeBase = tc;
     }
-    return tcRet;
 }
 
 Cycle_t
