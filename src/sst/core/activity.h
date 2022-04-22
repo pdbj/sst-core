@@ -12,6 +12,8 @@
 #ifndef SST_CORE_ACTIVITY_H
 #define SST_CORE_ACTIVITY_H
 
+#include "sst_config.h"
+
 #include "sst/core/mempool.h"
 #include "sst/core/output.h"
 #include "sst/core/serialization/serializable.h"
@@ -181,7 +183,7 @@ public:
         out.output("%s%s\n", header.c_str(), toString().c_str());
     }
 
-#ifdef __SST_DEBUG_EVENT_TRACKING__
+#if defined(__SST_DEBUG_EVENT_TRACKING__) || defined(SST_EVENT_PROFILING)
     virtual void printTrackingInfo(const std::string& UNUSED(header), Output& UNUSED(out)) const {}
 #endif
 

@@ -59,6 +59,11 @@ Link::Link(LinkId_t tag) :
     type(UNINITIALIZED),
     mode(INIT),
     tag(tag)
+#ifdef __SST_DEBUG_EVENT_TRACKING__
+    , comp{""},
+    ctype{""},
+    port{""}
+#endif
 {}
 
 Link::Link() :
@@ -71,6 +76,11 @@ Link::Link() :
     type(UNINITIALIZED),
     mode(INIT),
     tag(-1)
+#ifdef __SST_DEBUG_EVENT_TRACKING__
+    , comp{""},
+    ctype{""},
+    port{""}
+#endif
 {}
 
 Link::~Link()
@@ -216,7 +226,7 @@ Link::send_impl(SimTime_t delay, Event* event)
     event->setDeliveryTime(cycle);
     event->setDeliveryInfo(tag, delivery_info);
 
-#if __SST_DEBUG_EVENT_TRACKING__
+#ifdef __SST_DEBUG_EVENT_TRACKING__
     event->addSendComponent(comp, ctype, port);
     event->addRecvComponent(pair_link->comp, pair_link->ctype, pair_link->port);
 #endif
@@ -261,7 +271,7 @@ Link::sendUntimedData(Event* data)
     data->setDeliveryTime(Simulation_impl::getSimulation()->untimed_phase + 1);
     data->setDeliveryInfo(tag, delivery_info);
 
-#if __SST_DEBUG_EVENT_TRACKING__
+#ifdef __SST_DEBUG_EVENT_TRACKING__
     data->addSendComponent(comp, ctype, port);
     data->addRecvComponent(pair_link->comp, pair_link->ctype, pair_link->port);
 #endif
