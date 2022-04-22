@@ -283,8 +283,6 @@ public:
 
     TimeConverter* registerClock(TimeConverter* tcFreq, Clock::HandlerBase* handler, int priority);
 
-    void registerClockHandler(SST::ComponentId_t id, HandlerId_t handler);
-
     /** Remove a clock handler from the list of active clock handlers */
     void unregisterClock(TimeConverter* tc, Clock::HandlerBase* handler, int priority);
 
@@ -299,6 +297,9 @@ public:
     /** Return the Statistic Processing Engine associated with this Simulation */
     Statistics::StatisticProcessingEngine* getStatisticsProcessingEngine(void) const;
 
+#if SST_CLOCK_PROFILING
+    void registerClockHandler(SST::ComponentId_t id, HandlerId_t handler);
+#endif
 #if SST_EVENT_PROFILING
 private:
     typedef std::map<std::string, uint64_t> eventCounter_t;
@@ -392,8 +393,7 @@ public:
     /** Performance Tracking Information **/
 
 #if SST_PERFORMANCE_INSTRUMENTING
-    FILE*                                          fp;
-    std::map<SST::HandlerId_t, SST::ComponentId_t> handler_mapping;
+    FILE*          fp;
 #endif
 
 #if SST_PERIODIC_PRINT
@@ -408,6 +408,7 @@ public:
 #endif
 
 #if SST_CLOCK_PROFILING
+    std::map<SST::HandlerId_t, SST::ComponentId_t> handler_mapping;
     std::map<SST::HandlerId_t, uint64_t> clockHandlers;
     std::map<SST::HandlerId_t, uint64_t> clockCounters;
 #endif

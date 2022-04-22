@@ -716,6 +716,7 @@ protected:
 
 private:
     SimTime_t processCurrentTimeWithUnderflowedBase(const std::string& base) const;
+    void registerClockBase(TimeConverter* tc, Clock::HandlerBase* handler, bool regAll);
 
     void
     configureCollectionMode(Statistics::StatisticBase* statistic, const SST::Params& params, const std::string& name);

@@ -881,18 +881,6 @@ Simulation_impl::registerClock(const UnitAlgebra& freq, Clock::HandlerBase* hand
     return registerClock(tcFreq, handler, priority);
 }
 
-#if SST_PERFORMANCE_INSTRUMENTING
-void
-Simulation_impl::registerClockHandler(SST::ComponentId_t id, SST::HandlerId_t handler)
-{
-    handler_mapping.insert(std::pair<SST::HandlerId_t, SST::ComponentId_t>(handler, id));
-}
-#else
-void
-Simulation_impl::registerClockHandler(SST::ComponentId_t UNUSED(id), SST::HandlerId_t UNUSED(handler))
-{}
-#endif
-
 TimeConverter*
 Simulation_impl::registerClock(TimeConverter* tcFreq, Clock::HandlerBase* handler, int priority)
 {
@@ -1002,6 +990,14 @@ Simulation_impl::getStatisticsProcessingEngine(void) const
 {
     return Statistics::StatisticProcessingEngine::getInstance();
 }
+
+#if SST_CLOCK_PROFILING
+void
+Simulation_impl::registerClockHandler(SST::ComponentId_t id, SST::HandlerId_t handler)
+{
+    handler_mapping.insert(std::make_pair(handler, id));
+}
+#endif
 
 #if SST_EVENT_PROFILING
 void
