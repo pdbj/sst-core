@@ -68,12 +68,18 @@ public:
     Event()
       : Activity(),
       delivery_info(0)
+#if defined(__SST_DEBUG_EVENT_TRACKING__) || defined(SST_EVENT_PROFILING)
+      , first_comp{""},
+      last_comp{""}
+#endif
+#ifdef __SST_DEBUG_EVENT_TRACKING__
+      , first_type{""},
+      first_port{""},
+      last_type{""},
+      last_port{""}
+#endif
     {
         setPriority(EVENTPRIORITY);
-#if __SST_DEBUG_EVENT_TRACKING__
-        first_comp = "";
-        last_comp  = "";
-#endif
     }
     virtual ~Event();
 
@@ -81,7 +87,16 @@ public:
     virtual Event* clone();
 
 
+#if defined(__SST_DEBUG_EVENT_TRACKING__) || defined(SST_EVENT_PROFILING)
+    const std::string& getFirstComponentName() { return first_comp; }
+    const std::string& getLastComponentName() { return last_comp; }
+#endif
+
 #ifdef __SST_DEBUG_EVENT_TRACKING__
+    const std::string& getFirstComponentType() { return first_type; }
+    const std::string& getFirstPort() { return first_port; }
+    const std::string& getLastComponentType() { return last_type; }
+    const std::string& getLastPort() { return last_port; }
 
     virtual void printTrackingInfo(const std::string& header, Output& out) const override
     {
@@ -90,13 +105,6 @@ public:
             first_comp.c_str(), first_port.c_str(), first_type.c_str(), last_comp.c_str(), last_port.c_str(),
             last_type.c_str());
     }
-
-    const std::string& getFirstComponentName() { return first_comp; }
-    const std::string& getFirstComponentType() { return first_type; }
-    const std::string& getFirstPort() { return first_port; }
-    const std::string& getLastComponentName() { return last_comp; }
-    const std::string& getLastComponentType() { return last_type; }
-    const std::string& getLastPort() { return last_port; }
 
     void addSendComponent(const std::string& comp, const std::string& type, const std::string& port)
     {
@@ -119,11 +127,13 @@ public:
     {
         Activity::serialize_order(ser);
         ser& delivery_info;
-#ifdef __SST_DEBUG_EVENT_TRACKING__
+#if defined(__SST_DEBUG_EVENT_TRACKING__) || defined(SST_EVENT_PROFILING)
         ser& first_comp;
+        ser& last_comp;
+#endif
+#ifdef __SST_DEBUG_EVENT_TRACKING__
         ser& first_type;
         ser& first_port;
-        ser& last_comp;
         ser& last_type;
         ser& last_port;
 #endif
@@ -184,11 +194,13 @@ private:
 private:
     static std::atomic<uint64_t> id_counter;
 
-#ifdef __SST_DEBUG_EVENT_TRACKING__
+#if defined(__SST_DEBUG_EVENT_TRACKING__) || defined(SST_EVENT_PROFILING)
     std::string first_comp;
+    std::string last_comp;
+#endif
+#ifdef __SST_DEBUG_EVENT_TRACKING__
     std::string first_type;
     std::string first_port;
-    std::string last_comp;
     std::string last_type;
     std::string last_port;
 #endif
