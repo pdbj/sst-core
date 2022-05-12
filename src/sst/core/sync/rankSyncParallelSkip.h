@@ -49,6 +49,9 @@ public:
     /** Prepare for complete() stage */
     void prepareForComplete() override;
 
+    virtual double getWaitTimeS() { return mpiWaitTime; }
+    double getDeserializeTimeS() override { return mpiWaitTime; }
+
     SimTime_t getNextSyncTime() override { return myNextSyncTime; }
 
     uint64_t getDataSize() const override;

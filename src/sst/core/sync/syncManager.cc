@@ -110,6 +110,9 @@ public:
 
     void prepareForComplete() override {}
 
+    double getWaitTimeS() override { return 0; }
+    double getDeserializeTimeS() override { return 0; }
+
     SimTime_t getNextSyncTime() override { return nextSyncTime; }
 
     TimeConverter* getMaxPeriod() { return max_period; }
@@ -132,6 +135,8 @@ public:
     void processLinkUntimedData() override {}
     void finalizeLinkConfigurations() override {}
     void prepareForComplete() override {}
+
+    double getWaitTimeS() override { return 0; }
 
     /** Register a Link which this Sync Object is responsible for */
     void           registerLink(const std::string& UNUSED(name), Link* UNUSED(link)) override {}
@@ -377,6 +382,16 @@ SyncManager::prepareForComplete()
     threadSync->prepareForComplete();
     // Only thread 0 should call finalize on rankSync
     if ( rank.thread == 0 ) rankSync->prepareForComplete();
+}
+
+SyncManager::wait_timeS
+SyncManager::getWaitTimesS()
+{
+  wait_timeS wt;
+  wt.threadWaitS = threadSync->getWaitTimeS();
+  wt.rankWaitS = rankSync->getWaitTimeS();
+  wt.rankDeserializeS = rankSync->getDeserializeTimeS();
+  return wt;
 }
 
 void

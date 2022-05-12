@@ -161,12 +161,21 @@ RankSyncParallelSkip::execute(int thread)
     // TraceFunction trace(CALL_INFO_LONG);
     if ( thread == 0 ) {
         exchange_master(thread);
+
+	auto waitStart = SST::Core::Profile::now();
         allDoneBarrier.wait(); /* Sync up with slave finish below */
+	mpiWaitTime += SST::Core::Profile::getElapsed(waitStart);
     }
     else {
+	auto waitStart = SST::Core::Profile::now();
         serializeReadyBarrier.wait(); /* Wait for exchange_master() to start up */
+	mpiWaitTime += SST::Core::Profile::getElapsed(waitStart);
+
         exchange_slave(thread);       /* Waits at the end */
+
+	waitStart = SST::Core::Profile::now();
         allDoneBarrier.wait();        /* Wait for exchange_master to finish */
+	mpiWaitTime += SST::Core::Profile::getElapsed(waitStart);
     }
 }
 
@@ -223,7 +232,9 @@ RankSyncParallelSkip::exchange_slave(int thread)
             link_send_queue[recv->local_thread].insert(recv);
         }
     }
+    auto waitStart = SST::Core::Profile::now();
     slaveExchangeDoneBarrier.wait();
+    mpiWaitTime += SST::Core::Profile::getElapsed(waitStart);
 }
 
 void
@@ -244,7 +255,9 @@ RankSyncParallelSkip::exchange_master(int UNUSED(thread))
 
     remaining_deser = comm_recv_map.size();
 
+    auto waitStart = SST::Core::Profile::now();
     serializeReadyBarrier.wait(); /* Wait for / release slaves to serialize */
+    mpiWaitTime += SST::Core::Profile::getElapsed(waitStart);
 
     for ( auto i = comm_recv_map.begin(); i != comm_recv_map.end(); ++i ) {
         // Post all the receives
@@ -341,9 +354,9 @@ RankSyncParallelSkip::exchange_master(int UNUSED(thread))
     exchange_slave(0); /* Barriers at end */
 
     // Clear the SyncQueues used to send the data after all the sends have completed
-    // waitStart = SST::Core::Profile::now();
+    waitStart = SST::Core::Profile::now();
     MPI_Waitall(sreq_count, sreqs, MPI_STATUSES_IGNORE);
-    // mpiWaitTime += SST::Core::Profile::getElapsed(waitStart);
+    mpiWaitTime += SST::Core::Profile::getElapsed(waitStart);
 
     for ( auto i = comm_send_map.begin(); i != comm_send_map.end(); ++i ) {
         i->second.squeue->clear();
