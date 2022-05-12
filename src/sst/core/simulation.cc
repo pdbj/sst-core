@@ -187,6 +187,7 @@ Simulation_impl::Simulation_impl(Config* cfg, RankInfo my_rank, RankInfo num_ran
     currentSimCycle(0),
     endSimCycle(0),
     currentPriority(0),
+    currentEvents(0),
     my_rank(my_rank),
     num_ranks(num_ranks),
     run_phase_start_time(0.0),
@@ -670,6 +671,7 @@ Simulation_impl::run()
     run_phase_start_time = sst_get_cpu_time();
 
     while ( LIKELY(!endSim) ) {
+        ++currentEvents;
         current_activity = timeVortex->pop();
         currentSimCycle  = current_activity->getDeliveryTime();
         currentPriority  = current_activity->getPriority();
@@ -1119,10 +1121,11 @@ void
 Simulation_impl::printPerformanceInfo()
 {
 #if SST_RUNTIME_PROFILING
-    fprintf(fp, "///Print at run time %.6f s, simulation time %" PRIu64 " %s\n",
+    fprintf(fp, "///Print at run time %.6g s, simulation time %" PRIu64 " %s, %" PRIu64 " events\n",
             (double)runtime / clockDivisor,
             currentSimCycle,
-            clockResolution.c_str());
+            clockResolution.c_str(),
+            currentEvents);
 #endif
 
 // Iterate through components and find all handlers mapped to that component
@@ -1284,6 +1287,9 @@ Simulation_impl::printPerformanceInfo()
     fprintf(fp, "Rank sync average barrier wait time: %.6g s/sync\n",
             (rankSyncCounter == 0 ? 0.0 :
              wt.rankWaitS / rankSyncCounter));
+    fprintf(fp, "Rank sync average events: %.6g events/sync\n",
+            (rankSyncCounter == 0.0 ? 0.0 :
+             currentEvents / rankSyncCounter));
     fprintf(fp, "All sync count:  %" PRIu64 "\n",
             threadSyncCounter + rankSyncCounter);
     fprintf(fp, "All sync execution time: %.6f s\n",
@@ -1297,6 +1303,9 @@ Simulation_impl::printPerformanceInfo()
     fprintf(fp, "All sync average wait time: %.6g s/sync\n",
             ( allSyncCounter == 0 ? 0.0 :
               (wt.threadWaitS + wt.rankWaitS) / allSyncCounter));
+    fprintf(fp, "All sync average events: %.6g events/sync\n",
+            (allSyncCounter == 0.0 ? 0.0 :
+            currentEvents / allSyncCounter));
 
     fprintf(fp, "\n");
 #endif  // SST_SYNC_PROFILING
@@ -1308,10 +1317,11 @@ void
 Simulation_impl::printPerformanceInfoCsv(FILE * fp)
 {
 #if SST_RUNTIME_PROFILING
-    fprintf(fp, "Run time,%.6f,s,simulation time,%" PRIu64 ",%s\n",
+    fprintf(fp, "Run time,%.6g,s,simulation time,%" PRIu64 ",%s, %" PRIu64 " events\n",
             (double)runtime / clockDivisor,
             currentSimCycle,
-            clockResolution.c_str());
+            clockResolution.c_str(),
+           currentEvents);
 #endif
 
 // Iterate through components and find all handlers mapped to that component
