@@ -44,6 +44,8 @@ public:
     virtual void exchangeLinkUntimedData(int thread, std::atomic<int>& msg_count) = 0;
     virtual void finalizeLinkConfigurations()                                     = 0;
     virtual void prepareForComplete()                                             = 0;
+    virtual double getWaitTimeS()                                                 = 0;
+    virtual double getDeserializeTimeS()                                          = 0;
 
     virtual SimTime_t getNextSyncTime() { return nextSyncTime; }
 
@@ -84,6 +86,7 @@ public:
     virtual void processLinkUntimedData()     = 0;
     virtual void finalizeLinkConfigurations() = 0;
     virtual void prepareForComplete()         = 0;
+    virtual double getWaitTimeS()             = 0;
 
     virtual SimTime_t getNextSyncTime() { return nextSyncTime; }
 
@@ -130,6 +133,14 @@ public:
     /** Finish link configuration */
     void finalizeLinkConfigurations();
     void prepareForComplete();
+
+    struct wait_timeS 
+    {
+      double threadWaitS;
+      double rankWaitS;
+      double rankDeserializeS;
+    };
+    wait_timeS getWaitTimesS();
 
     void print(const std::string& header, Output& out) const override;
 

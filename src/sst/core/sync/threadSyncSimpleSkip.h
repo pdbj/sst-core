@@ -48,6 +48,8 @@ public:
     void finalizeLinkConfigurations() override;
     void prepareForComplete() override;
 
+    double getWaitTimeS() override { return totalWaitTime; }
+
     /** Register a Link which this Sync Object is responsible for */
     void           registerLink(const std::string& name, Link* link) override;
     ActivityQueue* registerRemoteLink(int tid, const std::string& name, Link* link) override;

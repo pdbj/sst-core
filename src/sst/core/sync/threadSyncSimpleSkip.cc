@@ -129,9 +129,9 @@ ThreadSyncSimpleSkip::after()
 void
 ThreadSyncSimpleSkip::execute()
 {
-    totalWaitTime = barrier[0].wait();
+    totalWaitTime += barrier[0].wait();
     before();
-    totalWaitTime = barrier[1].wait();
+    totalWaitTime += barrier[1].wait();
     after();
     totalWaitTime += barrier[2].wait();
 }

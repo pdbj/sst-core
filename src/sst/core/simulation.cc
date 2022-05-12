@@ -1223,11 +1223,15 @@ Simulation_impl::printPerformanceInfo()
     fprintf(fp, "\n");
 #endif  // SST_EVENT_PROFILING
 
+    SyncManager::wait_timeS wt = syncManager->getWaitTimesS();
+
 #if SST_EVENT_PROFILING
     // Rank only information
     fprintf(fp, "Serialization Information:\n");
     fprintf(fp, "Rank total serialization time: %" PRIu64 " %s\n",
             rankLatency, clockResolution.c_str());
+    fprintf(fp, "Rank total deserialization time: %.6g s\n",
+            wt.rankDeserializeS);
     fprintf(fp, "Rank pairwise sync count: %" PRIu64 "\n", rankExchangeCounter);
     fprintf(fp, "Rank total events sent: %" PRIu64 "\n", rankExchangeEvents);
     fprintf(fp, "Rank total bytes sent: %" PRIu64 "\n", rankExchangeBytes);
@@ -1235,6 +1239,9 @@ Simulation_impl::printPerformanceInfo()
             (rankExchangeCounter == 0 ? 0.0 :
              (double)rankLatency / rankExchangeCounter),
             clockResolution.c_str());
+    fprintf(fp, "Rank average sync deserialization time: %.6g s/sync\n",
+            (rankSyncCounter == 0 ? 0.0 :
+             wt.rankDeserializeS / rankSyncCounter));
     fprintf(fp, "Rank average sync bytes sent: %.6f bytes/sync\n",
             (rankExchangeCounter == 0 ? 0.0 :
              (double)rankExchangeBytes / rankExchangeCounter));
@@ -1254,26 +1261,42 @@ Simulation_impl::printPerformanceInfo()
     fprintf(fp, "Thread-sync count: %" PRIu64 "\n", threadSyncCounter);
     fprintf(fp, "Thread-sync total execution time: %.6f s\n",
             (double)threadSyncTime / clockDivisor);
+    fprintf(fp, "Thread sync barrier wait time: %.6g s\n",
+            wt.threadWaitS);
     fprintf(fp, "Thread-sync average execution time: %.6f %s/sync\n",
             (threadSyncCounter == 0.0 ? 0.0 :
              (double)threadSyncTime / threadSyncCounter),
             clockResolution.c_str());
+    fprintf(fp, "Thread sync average wait time: %.6g s/sync\n",
+            (threadSyncCounter == 0.0 ? 0.0 :
+             wt.threadWaitS / threadSyncCounter));
+
     fprintf(fp, "Rank Sync (including associated thread syncs):\n");
     fprintf(fp, "Rank sync count: %" PRIu64 "\n", rankSyncCounter);
     fprintf(fp, "Rank sync total execution time: %.6f s\n",
             (double)rankSyncTime / clockDivisor);
+    fprintf(fp, "Rank sync barrier wait time: %.6g s\n",
+            wt.rankWaitS);
     fprintf(fp, "Rank sync average execution time: %.6f %s/sync\n",
             (rankSyncCounter == 0.0 ? 0.0 :
              (double)rankSyncTime / rankSyncCounter),
             clockResolution.c_str());
+    fprintf(fp, "Rank sync average barrier wait time: %.6g s/sync\n",
+            (rankSyncCounter == 0 ? 0.0 :
+             wt.rankWaitS / rankSyncCounter));
     fprintf(fp, "All sync count:  %" PRIu64 "\n",
             threadSyncCounter + rankSyncCounter);
     fprintf(fp, "All sync execution time: %.6f s\n",
             (double)(threadSyncTime + rankSyncTime) / clockDivisor);
+    fprintf(fp, "All sync wait time: %.6g s\n",
+            wt.threadWaitS + wt.rankWaitS);
     fprintf(fp, "All sync average execution time: %.6f %s/sync\n",
             ( (threadSyncCounter + rankSyncCounter) == 0 ? 0.0 :
               (double)(threadSyncTime + rankSyncTime) / (threadSyncCounter + rankSyncCounter)),
             clockResolution.c_str());
+    fprintf(fp, "All sync average wait time: %.6g s/sync\n",
+            ( allSyncCounter == 0 ? 0.0 :
+              (wt.threadWaitS + wt.rankWaitS) / allSyncCounter));
 
     fprintf(fp, "\n");
 #endif  // SST_SYNC_PROFILING
@@ -1393,9 +1416,12 @@ Simulation_impl::printPerformanceInfoCsv(FILE * fp)
 
 #if SST_EVENT_PROFILING
     // Rank only information
+    SyncManager::wait_timeS wt = syncManager->getWaitTimesS();
     fprintf(fp, "Serialization Information:\n");
     fprintf(fp, "Rank total serialization time: %" PRIu64 " %s\n",
             rankLatency, clockResolution.c_str());
+    fprintf(fp, "Rank total deserialization time: %.6g s\n",
+            wt.rankDeserializeS);
     fprintf(fp, "Rank pairwise sync count: %" PRIu64 "\n", rankExchangeCounter);
     fprintf(fp, "Rank total events sent: %" PRIu64 "\n", rankExchangeEvents);
     fprintf(fp, "Rank total bytes sent: %" PRIu64 "\n", rankExchangeBytes);
@@ -1403,10 +1429,12 @@ Simulation_impl::printPerformanceInfoCsv(FILE * fp)
             (rankExchangeCounter == 0 ? 0.0 :
              (double)rankLatency / rankExchangeCounter),
             clockResolution.c_str());
+    fprintf(fp, "Rank average deserialization time: %.6g s/sync\n",
+            (rankSyncCounter == 0 ? 0.0 :
+             wt.rankDeserializeS / rankSyncCounter));
     fprintf(fp, "Rank average sync bytes sent: %.6f bytes/sync\n",
             (rankExchangeCounter == 0 ? 0.0 :
              (double)rankExchangeBytes / rankExchangeCounter));
-    fprintf(fp, "Rank average event serialization time: %.6f %s/event\n",
             (rankExchangeEvents == 0 ? 0.0 :
              (double)rankLatency / rankExchangeEvents),
             clockResolution.c_str());
@@ -1417,24 +1445,37 @@ Simulation_impl::printPerformanceInfoCsv(FILE * fp)
 #endif  // SST_EVENT_PROFILING
 
 #if SST_SYNC_PROFILING
-    fprintf(fp, "#Synchronization Information:\n");
-    fprintf(fp, "Mode,Count,TTime (s),AvgTime (%s/sync)\n",
+    auto allSyncCounter = threadSyncCounter + rankSyncCounter;
+    fprintf(fp, "# Synchronization Information:\n");
+    fprintf(fp, "#Mode,Count,TTime (s),Wait (s),AvgTime (%s/sync),AvgWait (s/sync),AvgEvents (ev/sync)\n",
             clockResolution.c_str());
-    fprintf(fp, "Thread,%" PRIu64 ",%.6f,%.6f,\n",
+    fprintf(fp, "Thread,%" PRIu64 ",%.6g,%.6g,%.6g,%.6g,%.6g\n",
             threadSyncCounter,
             (double)threadSyncTime / clockDivisor,
+            wt.threadWaitS,
             (threadSyncCounter == 0.0 ? 0.0 :
-             (double)threadSyncTime / threadSyncCounter));
-    fprintf(fp, "Rank,%" PRIu64 ",%.6f,%.6f,\n",
+             (double)threadSyncTime / threadSyncCounter),
+            (threadSyncCounter == 0.0 ? 0.0 :
+             wt.threadWaitS / threadSyncCounter),
+            0.0);
+    fprintf(fp, "Rank,%" PRIu64 ",%.6g,%.6g,%.6g,%.6g,%.6g\n",
             rankSyncCounter,
             (double)rankSyncTime / clockDivisor,
+            wt.rankWaitS,
             (rankSyncCounter == 0.0 ? 0.0 :
-             (double)rankSyncTime / rankSyncCounter));
-    fprintf(fp, "All,%" PRIu64 ",%.6f,%.6f,\n",
-            threadSyncCounter + rankSyncCounter,
+             (double)rankSyncTime / rankSyncCounter),
+            (rankSyncCounter == 0.0 ? 0.0 :
+             wt.rankWaitS / rankSyncCounter),
+            (double)currentEvents / rankSyncCounter);
+    fprintf(fp, "All,%" PRIu64 ",%.6g,%.6g,%.6g,%.6g,%.6g\n",
+            allSyncCounter,
             (double)(threadSyncTime + rankSyncTime) / clockDivisor,
-            ( (threadSyncCounter + rankSyncCounter) == 0 ? 0.0 :
-              (double)(threadSyncTime + rankSyncTime) / (threadSyncCounter + rankSyncCounter)));
+            (wt.threadWaitS + wt.rankWaitS),
+            ( allSyncCounter == 0 ? 0 :
+              (double)(threadSyncTime + rankSyncTime) / allSyncCounter),
+            ( allSyncCounter == 0 ? 0 :
+              (wt.threadWaitS + wt.rankWaitS) / allSyncCounter),
+            (double)currentEvents / allSyncCounter);
 
     fprintf(fp, "\n");
 #endif  // SST_SYNC_PROFILING

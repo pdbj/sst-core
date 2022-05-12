@@ -48,6 +48,8 @@ public:
     void finalizeLinkConfigurations() override {}
     void prepareForComplete() override {}
 
+    double getWaitTimeS() override { return totalWaitTime; }
+
     SimTime_t getNextSyncTime() override { return nextSyncTime - 1; }
 
     /** Register a Link which this Sync Object is responsible for */
