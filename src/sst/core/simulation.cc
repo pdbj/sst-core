@@ -1145,7 +1145,7 @@ Simulation_impl::printPerformanceInfo()
     for ( const auto & clockId : free_handlers ) {
         auto exec_time = clockHandlers.find(clockId)->second / 1e9;
         auto count = clockCounters.find(clockId)->second;
-        fprintf(fp, "Handler id %" PRIu32 ", count %" PRIu64 ", runtime: %.6f, average: %.6f %s/tick\n",
+        fprintf(fp, "Handler id %" PRIu32 ", count %" PRIu64 ", runtime: %.6g, average: %.6g %s/tick\n",
                 clockId, count, exec_time,
                 (count == 0 ? 0.0 : exec_time / count),
                 clockResolution.c_str());
@@ -1178,9 +1178,9 @@ Simulation_impl::printPerformanceInfo()
                 fprintf(fp, "Clock Handler id: %" PRIu32 "\n", clockId);
                 fprintf(fp, "Clock Handler execution count: %" PRIu64 "\n",
                         counters);
-                fprintf(fp, "Clock Handler total execution time: %.6f s\n",
+                fprintf(fp, "Clock Handler total execution time: %.6g s\n",
                         (double)exec_time / clockDivisor);
-                fprintf(fp, "Clock Handler average execution time: %.6f %s/tick\n\n",
+                fprintf(fp, "Clock Handler average execution time: %.6g %s/tick\n\n",
                         (counters == 0 ? 0.0 : (double)exec_time / counters),
                         clockResolution.c_str());
             }
@@ -1216,10 +1216,10 @@ Simulation_impl::printPerformanceInfo()
         if ( eventTimeIterator != eventHandlers.end() ) {
             eventTimer = (double)eventTimeIterator->second;
         }
-        fprintf(fp, "Component total event handler execution time: %.6f s\n",
+        fprintf(fp, "Component total event handler execution time: %.6g s\n",
                 eventTimer / clockDivisor);
 
-        fprintf(fp, "Component average event execution time: %.6f %s/event\n\n",
+        fprintf(fp, "Component average event execution time: %.6g %s/event\n\n",
                 (eventRecvs == 0 ? 0.0 : eventTimer / eventRecvs),
                 clockResolution.c_str());
     }
@@ -1231,28 +1231,30 @@ Simulation_impl::printPerformanceInfo()
 #if SST_EVENT_PROFILING
     // Rank only information
     fprintf(fp, "Serialization Information:\n");
+    fprintf(fp, "Rank sync count: %" PRIu64 "\n", rankSyncCounter);
+    fprintf(fp, "Rank pairwise sync count: %" PRIu64 "\n", rankExchangeCounter);
     fprintf(fp, "Rank total serialization time: %" PRIu64 " %s\n",
             rankLatency, clockResolution.c_str());
     fprintf(fp, "Rank total deserialization time: %.6g s\n",
             wt.rankDeserializeS);
-    fprintf(fp, "Rank pairwise sync count: %" PRIu64 "\n", rankExchangeCounter);
     fprintf(fp, "Rank total events sent: %" PRIu64 "\n", rankExchangeEvents);
     fprintf(fp, "Rank total bytes sent: %" PRIu64 "\n", rankExchangeBytes);
-    fprintf(fp, "Rank average sync serialization time: %.6f %s/sync\n",
-            (rankExchangeCounter == 0 ? 0.0 :
-             (double)rankLatency / rankExchangeCounter),
+
+    fprintf(fp, "Rank average sync serialization time: %.6g %s/sync\n",
+            (rankSyncCounter == 0 ? 0.0 :
+             (double)rankLatency / rankSyncCounter),
             clockResolution.c_str());
     fprintf(fp, "Rank average sync deserialization time: %.6g s/sync\n",
             (rankSyncCounter == 0 ? 0.0 :
              wt.rankDeserializeS / rankSyncCounter));
-    fprintf(fp, "Rank average sync bytes sent: %.6f bytes/sync\n",
-            (rankExchangeCounter == 0 ? 0.0 :
-             (double)rankExchangeBytes / rankExchangeCounter));
-    fprintf(fp, "Rank average event serialization time: %.6f %s/event\n",
+    fprintf(fp, "Rank average sync bytes sent: %.6g bytes/sync\n",
+            (rankSyncCounter == 0 ? 0.0 :
+             (double)rankExchangeBytes / rankSyncCounter));
+    fprintf(fp, "Rank average event serialization time: %.6g %s/event\n",
             (rankExchangeEvents == 0 ? 0.0 :
              (double)rankLatency / rankExchangeEvents),
             clockResolution.c_str());
-    fprintf(fp, "Rank average event bytes sent: %.6f bytes/event\n",
+    fprintf(fp, "Rank average event bytes sent: %.6g bytes/event\n",
             (rankExchangeEvents == 0 ? 0.0 :
              (double)rankExchangeBytes / rankExchangeEvents));
     fprintf(fp, "\n");
@@ -1261,12 +1263,12 @@ Simulation_impl::printPerformanceInfo()
 #if SST_SYNC_PROFILING
     fprintf(fp, "Synchronization Information:\n");
     fprintf(fp, "Thread-only sync (apart from Rank syncs):\n");
-    fprintf(fp, "Thread-sync count: %" PRIu64 "\n", threadSyncCounter);
-    fprintf(fp, "Thread-sync total execution time: %.6f s\n",
+    fprintf(fp, "Thread sync count: %" PRIu64 "\n", threadSyncCounter);
+    fprintf(fp, "Thread sync total execution time: %.6g s\n",
             (double)threadSyncTime / clockDivisor);
     fprintf(fp, "Thread sync barrier wait time: %.6g s\n",
             wt.threadWaitS);
-    fprintf(fp, "Thread-sync average execution time: %.6f %s/sync\n",
+    fprintf(fp, "Thread sync average execution time: %.6g %s/sync\n",
             (threadSyncCounter == 0.0 ? 0.0 :
              (double)threadSyncTime / threadSyncCounter),
             clockResolution.c_str());
@@ -1274,13 +1276,13 @@ Simulation_impl::printPerformanceInfo()
             (threadSyncCounter == 0.0 ? 0.0 :
              wt.threadWaitS / threadSyncCounter));
 
-    fprintf(fp, "Rank Sync (including associated thread syncs):\n");
+    fprintf(fp, "Rank sync (including associated thread syncs):\n");
     fprintf(fp, "Rank sync count: %" PRIu64 "\n", rankSyncCounter);
-    fprintf(fp, "Rank sync total execution time: %.6f s\n",
+    fprintf(fp, "Rank sync total execution time: %.6g s\n",
             (double)rankSyncTime / clockDivisor);
     fprintf(fp, "Rank sync barrier wait time: %.6g s\n",
             wt.rankWaitS);
-    fprintf(fp, "Rank sync average execution time: %.6f %s/sync\n",
+    fprintf(fp, "Rank sync average execution time: %.6g %s/sync\n",
             (rankSyncCounter == 0.0 ? 0.0 :
              (double)rankSyncTime / rankSyncCounter),
             clockResolution.c_str());
@@ -1290,15 +1292,17 @@ Simulation_impl::printPerformanceInfo()
     fprintf(fp, "Rank sync average events: %.6g events/sync\n",
             (rankSyncCounter == 0.0 ? 0.0 :
              currentEvents / rankSyncCounter));
-    fprintf(fp, "All sync count:  %" PRIu64 "\n",
-            threadSyncCounter + rankSyncCounter);
-    fprintf(fp, "All sync execution time: %.6f s\n",
+
+    double allSyncCounter = threadSyncCounter + rankSyncCounter;
+    fprintf(fp, "All sync count:  %.6g\n",
+            allSyncCounter);
+    fprintf(fp, "All sync execution time: %.6g s\n",
             (double)(threadSyncTime + rankSyncTime) / clockDivisor);
     fprintf(fp, "All sync wait time: %.6g s\n",
             wt.threadWaitS + wt.rankWaitS);
-    fprintf(fp, "All sync average execution time: %.6f %s/sync\n",
-            ( (threadSyncCounter + rankSyncCounter) == 0 ? 0.0 :
-              (double)(threadSyncTime + rankSyncTime) / (threadSyncCounter + rankSyncCounter)),
+    fprintf(fp, "All sync average execution time: %.6g %s/sync\n",
+            ( allSyncCounter == 0 ? 0.0 :
+              (threadSyncTime + rankSyncTime) / allSyncCounter),
             clockResolution.c_str());
     fprintf(fp, "All sync average wait time: %.6g s/sync\n",
             ( allSyncCounter == 0 ? 0.0 :
@@ -1327,7 +1331,7 @@ Simulation_impl::printPerformanceInfoCsv(FILE * fp)
 // Iterate through components and find all handlers mapped to that component
 // If handler mapping is not populated, prints out raw clock handler times
 #if SST_CLOCK_PROFILING
-    fprintf(fp, "#Clock Handlers:\n");
+    fprintf(fp, "# Clock Handlers:\n");
 
     // Find clock handlers not associated with a component
     std::set<SST::HandlerId_t> free_handlers;
@@ -1337,12 +1341,13 @@ Simulation_impl::printPerformanceInfoCsv(FILE * fp)
         }
     }
     // Log the free clock handlers
-    fprintf(fp, "#Clock Handlers not associated with a Component\n");
-    fprintf(fp, "ClockId,Count,TTime (s),AvgTime (s/tick)\n");
+    fprintf(fp, "# Clock Handlers not associated with a Component\n");
+    fprintf(fp, "#ClockId,Count,TTime (s),AvgTime (%s/tick)\n",
+            clockResolution.c_str());
     for ( const auto & clockId : free_handlers ) {
         auto exec_time = clockHandlers.find(clockId)->second / 1e9;
         auto count = clockCounters.find(clockId)->second;
-        fprintf(fp, "%" PRIu32 ",%" PRIu64 ",%.6f,%.6f\n",
+        fprintf(fp, "%" PRIu32 ",%" PRIu64 ",%.6g,%.6g\n",
                 clockId,
                 count,
                 exec_time,
@@ -1351,13 +1356,13 @@ Simulation_impl::printPerformanceInfoCsv(FILE * fp)
     fprintf(fp, "\n");
 
     // Now log clock handlers mapped to components
-    fprintf(fp, "#Clock Handlers associated with Components:\n");
-    fprintf(fp, "Comp Name,ClockId,Count,TTime (s),AvgTime (%s/tick)\n",
+    fprintf(fp, "# Clock Handlers associated with Components:\n");
+    fprintf(fp, "#Comp Name,ClockId,Count,TTime (s),AvgTime (%s/tick)\n",
                         clockResolution.c_str());
     for ( const auto & comp : compInfoMap ) {
         auto compId = comp->getID();
-        uint64_t exec_time = 0;
-        uint64_t counters  = 0;
+        uint64_t exec_time{0};
+        uint64_t counters{0};
         HandlerId_t clockId{0};
 
         // Go through all the clock handler to component id mappings
@@ -1374,7 +1379,7 @@ Simulation_impl::printPerformanceInfoCsv(FILE * fp)
                 if ( counterIterator != clockCounters.end() ) {
                     counters += counterIterator->second;
                 }
-                fprintf(fp, "%s,%" PRIu32 ",%" PRIu64 ",%.6f,%.6f\n",
+                fprintf(fp, "%s,%" PRIu32 ",%" PRIu64 ",%.6g,%.6g\n",
                         comp->getName().c_str(),
                         clockId,
                         counters,
@@ -1388,8 +1393,8 @@ Simulation_impl::printPerformanceInfoCsv(FILE * fp)
 #endif  // SST_CLOCK_PROFILING
 
 #if SST_EVENT_PROFILING
-    fprintf(fp, "#Communication Counters:\n");
-    fprintf(fp, "Comp Name,EvSent,EvRecv,TTime (s),AvgTime (%s/event)\n",
+    fprintf(fp, "# Communication Counters:\n");
+    fprintf(fp, "#Comp Name,EvSent,EvRecv,TTime (s),AvgTime (%s/event)\n",
             clockResolution.c_str());
     for ( const auto & handler : eventHandlers ) {
         const std::string & comp = handler.first;
@@ -1416,9 +1421,9 @@ Simulation_impl::printPerformanceInfoCsv(FILE * fp)
         if ( eventTimeIterator != eventHandlers.end() ) {
             eventTimer = (double)eventTimeIterator->second;
         }
-        fprintf(fp, "%.6f,", eventTimer / clockDivisor);
+        fprintf(fp, "%.6g,", eventTimer / clockDivisor);
 
-        fprintf(fp, "%.6f\n",
+        fprintf(fp, "%.6g\n",
                 (eventRecvs == 0 ? 0.0 : eventTimer / eventRecvs));
     }
     fprintf(fp, "\n");
@@ -1427,28 +1432,31 @@ Simulation_impl::printPerformanceInfoCsv(FILE * fp)
 #if SST_EVENT_PROFILING
     // Rank only information
     SyncManager::wait_timeS wt = syncManager->getWaitTimesS();
-    fprintf(fp, "Serialization Information:\n");
+    fprintf(fp, "# Serialization Information:\n");
+    fprintf(fp, "Rank sync count: %" PRIu64 "\n", rankSyncCounter);
+    fprintf(fp, "Rank pairwise sync count: %" PRIu64 "\n", rankExchangeCounter);
     fprintf(fp, "Rank total serialization time: %" PRIu64 " %s\n",
             rankLatency, clockResolution.c_str());
     fprintf(fp, "Rank total deserialization time: %.6g s\n",
             wt.rankDeserializeS);
-    fprintf(fp, "Rank pairwise sync count: %" PRIu64 "\n", rankExchangeCounter);
     fprintf(fp, "Rank total events sent: %" PRIu64 "\n", rankExchangeEvents);
     fprintf(fp, "Rank total bytes sent: %" PRIu64 "\n", rankExchangeBytes);
-    fprintf(fp, "Rank average sync serialization time: %.6f %s/sync\n",
-            (rankExchangeCounter == 0 ? 0.0 :
-             (double)rankLatency / rankExchangeCounter),
+
+    fprintf(fp, "Rank average serialization time: %.6g %s/sync\n",
+            (rankSyncCounter == 0 ? 0.0 :
+             (double)rankLatency / rankSyncCounter),
             clockResolution.c_str());
     fprintf(fp, "Rank average deserialization time: %.6g s/sync\n",
             (rankSyncCounter == 0 ? 0.0 :
              wt.rankDeserializeS / rankSyncCounter));
-    fprintf(fp, "Rank average sync bytes sent: %.6f bytes/sync\n",
-            (rankExchangeCounter == 0 ? 0.0 :
-             (double)rankExchangeBytes / rankExchangeCounter));
+    fprintf(fp, "Rank average sync bytes sent: %.6g bytes/sync\n",
+            (rankSyncCounter == 0 ? 0.0 :
+             (double)rankExchangeBytes / rankSyncCounter));
+    fprintf(fp, "Rank average event serialization time: %.6g %s/event\n",
             (rankExchangeEvents == 0 ? 0.0 :
              (double)rankLatency / rankExchangeEvents),
             clockResolution.c_str());
-    fprintf(fp, "Rank average event bytes sent: %.6f bytes/event\n",
+    fprintf(fp, "Rank average event bytes sent: %.6g bytes/event\n",
             (rankExchangeEvents == 0 ? 0.0 :
              (double)rankExchangeBytes / rankExchangeEvents));
     fprintf(fp, "\n");
