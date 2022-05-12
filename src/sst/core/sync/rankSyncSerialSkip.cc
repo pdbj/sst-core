@@ -91,7 +91,7 @@ RankSyncSerialSkip::registerLink(
     }
 
     link_maps[to_rank.rank][name] = reinterpret_cast<uintptr_t>(link);
-#ifdef __SST_DEBUG_EVENT_TRACKING__
+#if defined(__SST_DEBUG_EVENT_TRACKING__) || defined(SST_EVENT_PROFILING)
     link->setSendingComponentInfo("SYNC", "SYNC", "");
 #endif
     return queue;

@@ -59,7 +59,7 @@ Link::Link(LinkId_t tag) :
     type(UNINITIALIZED),
     mode(INIT),
     tag(tag)
-#ifdef __SST_DEBUG_EVENT_TRACKING__
+#if defined(__SST_DEBUG_EVENT_TRACKING__) || defined(SST_EVENT_PROFILING)
     , comp{""},
     ctype{""},
     port{""}
@@ -76,7 +76,7 @@ Link::Link() :
     type(UNINITIALIZED),
     mode(INIT),
     tag(-1)
-#ifdef __SST_DEBUG_EVENT_TRACKING__
+#if defined(__SST_DEBUG_EVENT_TRACKING__) || defined(SST_EVENT_PROFILING)
     , comp{""},
     ctype{""},
     port{""}
@@ -230,6 +230,10 @@ Link::send_impl(SimTime_t delay, Event* event)
     event->addSendComponent(comp, ctype, port);
     event->addRecvComponent(pair_link->comp, pair_link->ctype, pair_link->port);
 #endif
+#ifdef SST_EVENT_PROFILING
+    // Do this second so ctype, port get recorded if both enabled
+    event->addSendRecvComponent(comp, pair_link->comp);
+#endif
 
     send_queue->insert(event);
 }
@@ -274,6 +278,10 @@ Link::sendUntimedData(Event* data)
 #ifdef __SST_DEBUG_EVENT_TRACKING__
     data->addSendComponent(comp, ctype, port);
     data->addRecvComponent(pair_link->comp, pair_link->ctype, pair_link->port);
+#endif
+#ifdef SST_EVENT_PROFILING
+    // Do this second so ctype, port get recorded if both enabled
+    data->addSendRecvComponent(comp, pair_link->comp);
 #endif
     send_queue->insert(data);
 }
