@@ -199,10 +199,6 @@ public:
 
     bool isIndependentThread() { return independent; }
 
-    void printPerformanceInfo();
-    void printPerformanceInfoCsv(FILE * fp);
-
-
     /** Register a OneShot event to be called after a time delay
         Note: OneShot cannot be canceled, and will always callback after
               the timedelay.
@@ -320,6 +316,11 @@ public:
 #endif
 
     // private:
+
+#if SST_PERFORMANCE_INSTRUMENTING
+    void printPerformanceInfo();
+    void printPerformanceInfoCsv(FILE * fp);
+#endif
 
     friend class Link;
     friend class Action;
