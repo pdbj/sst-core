@@ -280,7 +280,7 @@ BaseComponent::configureLink(const std::string& name, TimeConverter* time_base, 
             tmp->setDefaultTimeBase(time_base);
         else
             tmp->setDefaultTimeBase(my_info->defaultTimeBase);
-#ifdef __SST_DEBUG_EVENT_TRACKING__
+#if defined(__SST_DEBUG_EVENT_TRACKING__) || defined(SST_EVENT_PROFILING)
         tmp->setSendingComponentInfo(my_info->getName(), my_info->getType(), name);
 #endif
     }

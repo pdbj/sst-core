@@ -166,7 +166,7 @@ public:
      */
     bool isConfigured() { return type != UNINITIALIZED; }
 
-#ifdef __SST_DEBUG_EVENT_TRACKING__
+#if defined(__SST_DEBUG_EVENT_TRACKING__) || defined(SST_EVENT_PROFILING)
     void setSendingComponentInfo(const std::string& comp_in, const std::string& type_in, const std::string& port_in)
     {
         comp  = comp_in;
@@ -274,7 +274,7 @@ private:
     void prepareForComplete();
 
 
-#ifdef __SST_DEBUG_EVENT_TRACKING__
+#if defined(__SST_DEBUG_EVENT_TRACKING__) || defined(SST_EVENT_PROFILING)
     std::string comp;
     std::string ctype;
     std::string port;

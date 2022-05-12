@@ -90,6 +90,11 @@ public:
 #if defined(__SST_DEBUG_EVENT_TRACKING__) || defined(SST_EVENT_PROFILING)
     const std::string& getFirstComponentName() { return first_comp; }
     const std::string& getLastComponentName() { return last_comp; }
+    void addSendRecvComponent(const std::string& send, const std::string& recv)
+    {
+        if ( first_comp == "" ) { first_comp = send; }
+        last_comp = recv;
+    }
 #endif
 
 #ifdef __SST_DEBUG_EVENT_TRACKING__
