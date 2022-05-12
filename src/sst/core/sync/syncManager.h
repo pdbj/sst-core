@@ -44,8 +44,13 @@ public:
     virtual void exchangeLinkUntimedData(int thread, std::atomic<int>& msg_count) = 0;
     virtual void finalizeLinkConfigurations()                                     = 0;
     virtual void prepareForComplete()                                             = 0;
-    virtual double getWaitTimeS()                                                 = 0;
-    virtual double getDeserializeTimeS()                                          = 0;
+    struct wait_timeS
+    {
+      double mpiWaitS;
+      double barrierWaitS;
+      double deserializeS;
+    };
+    virtual wait_timeS getWaitTimeS() = 0;
 
     virtual SimTime_t getNextSyncTime() { return nextSyncTime; }
 
@@ -136,8 +141,9 @@ public:
 
     struct wait_timeS 
     {
-      double threadWaitS;
-      double rankWaitS;
+      double threadBarrierS;
+      double rankBarrierS;
+      double rankMPIWaitS;
       double rankDeserializeS;
     };
     wait_timeS getWaitTimesS();

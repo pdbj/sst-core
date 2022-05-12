@@ -55,6 +55,7 @@ SimTime_t RankSyncSerialSkip::myNextSyncTime = 0;
 RankSyncSerialSkip::RankSyncSerialSkip(RankInfo num_ranks, TimeConverter* UNUSED(minPartTC)) :
     RankSync(num_ranks),
     mpiWaitTime(0.0),
+    barrierWaitTime(0.0),
     deserializeTime(0.0)
 {
     max_period     = Simulation_impl::getSimulation()->getMinPartTC();
@@ -68,10 +69,10 @@ RankSyncSerialSkip::~RankSyncSerialSkip()
     }
     comm_map.clear();
 
-    if ( mpiWaitTime > 0.0 || deserializeTime > 0.0 )
+    if ( mpiWaitTime > 0.0 || barrierWaitTime > 0.0 || deserializeTime > 0.0 )
         Output::getDefaultObject().verbose(
-            CALL_INFO, 1, 0, "RankSyncSerialSkip mpiWait: %lg sec  deserializeWait:  %lg sec\n", mpiWaitTime,
-            deserializeTime);
+            CALL_INFO, 1, 0, "RankSyncSerialSkip mpiWait: %lg sec, thread barrier wait: %lg sec, deserializeWait:  %lg sec\n",
+	    mpiWaitTime, barrierWaitTime, deserializeTime);
 }
 
 ActivityQueue*
@@ -99,6 +100,13 @@ RankSyncSerialSkip::registerLink(
 void
 RankSyncSerialSkip::finalizeLinkConfigurations()
 {}
+
+RankSync::wait_timeS
+RankSyncSerialSkip:: getWaitTimeS()
+{
+  wait_timeS wt{mpiWaitTime, barrierWaitTime, deserializeTime};
+  return wt;
+}
 
 void
 RankSyncSerialSkip::prepareForComplete()

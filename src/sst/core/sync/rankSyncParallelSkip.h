@@ -49,8 +49,7 @@ public:
     /** Prepare for complete() stage */
     void prepareForComplete() override;
 
-    virtual double getWaitTimeS() { return mpiWaitTime; }
-    double getDeserializeTimeS() override { return mpiWaitTime; }
+    wait_timeS getWaitTimeS() override;
 
     SimTime_t getNextSyncTime() override { return myNextSyncTime; }
 
@@ -95,6 +94,7 @@ private:
     link_map_t      link_map;
 
     double mpiWaitTime;
+    double barrierWaitTime;
     double deserializeTime;
 
     int* recv_count;

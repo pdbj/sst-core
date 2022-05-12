@@ -110,8 +110,7 @@ public:
 
     void prepareForComplete() override {}
 
-    double getWaitTimeS() override { return 0; }
-    double getDeserializeTimeS() override { return 0; }
+    wait_timeS getWaitTimeS() override { return wait_timeS{0.0, 0.0, 0.0}; }
 
     SimTime_t getNextSyncTime() override { return nextSyncTime; }
 
@@ -387,10 +386,13 @@ SyncManager::prepareForComplete()
 SyncManager::wait_timeS
 SyncManager::getWaitTimesS()
 {
+  RankSync::wait_timeS rt = rankSync->getWaitTimeS();
+
   wait_timeS wt;
-  wt.threadWaitS = threadSync->getWaitTimeS();
-  wt.rankWaitS = rankSync->getWaitTimeS();
-  wt.rankDeserializeS = rankSync->getDeserializeTimeS();
+  wt.threadBarrierS = threadSync->getWaitTimeS();
+  wt.rankBarrierS = rt.barrierWaitS;
+  wt.rankMPIWaitS = rt.mpiWaitS;
+  wt.rankDeserializeS = rt.deserializeS;
   return wt;
 }
 

@@ -55,6 +55,7 @@ SimTime_t RankSyncParallelSkip::myNextSyncTime = 0;
 RankSyncParallelSkip::RankSyncParallelSkip(RankInfo num_ranks, TimeConverter* UNUSED(minPartTC)) :
     RankSync(num_ranks),
     mpiWaitTime(0.0),
+    barrierWaitTime(0.0),
     deserializeTime(0.0),
     send_count(0),
     serializeReadyBarrier(num_ranks.thread),
@@ -137,6 +138,13 @@ RankSyncParallelSkip::finalizeLinkConfigurations()
     send_queue.initialize(comm_send_map.size());
 }
 
+RankSync::wait_timeS
+RankSyncParallelSkip:: getWaitTimeS()
+{
+  wait_timeS wt{mpiWaitTime, barrierWaitTime, deserializeTime};
+  return wt;
+}
+
 void
 RankSyncParallelSkip::prepareForComplete()
 {}
@@ -162,20 +170,17 @@ RankSyncParallelSkip::execute(int thread)
     if ( thread == 0 ) {
         exchange_master(thread);
 
-	auto waitStart = SST::Core::Profile::now();
-        allDoneBarrier.wait(); /* Sync up with slave finish below */
-	mpiWaitTime += SST::Core::Profile::getElapsed(waitStart);
+        /* Sync up with slave finish below */
+        barrierWaitTime += allDoneBarrier.wait();
     }
     else {
-	auto waitStart = SST::Core::Profile::now();
-        serializeReadyBarrier.wait(); /* Wait for exchange_master() to start up */
-	mpiWaitTime += SST::Core::Profile::getElapsed(waitStart);
+        /* Wait for exchange_master() to start up */
+        barrierWaitTime += serializeReadyBarrier.wait();
 
         exchange_slave(thread);       /* Waits at the end */
 
-	waitStart = SST::Core::Profile::now();
-        allDoneBarrier.wait();        /* Wait for exchange_master to finish */
-	mpiWaitTime += SST::Core::Profile::getElapsed(waitStart);
+        /* Wait for exchange_master to finish */
+        barrierWaitTime += allDoneBarrier.wait();
     }
 }
 
@@ -232,9 +237,7 @@ RankSyncParallelSkip::exchange_slave(int thread)
             link_send_queue[recv->local_thread].insert(recv);
         }
     }
-    auto waitStart = SST::Core::Profile::now();
-    slaveExchangeDoneBarrier.wait();
-    mpiWaitTime += SST::Core::Profile::getElapsed(waitStart);
+    barrierWaitTime += slaveExchangeDoneBarrier.wait();
 }
 
 void
@@ -255,9 +258,8 @@ RankSyncParallelSkip::exchange_master(int UNUSED(thread))
 
     remaining_deser = comm_recv_map.size();
 
-    auto waitStart = SST::Core::Profile::now();
-    serializeReadyBarrier.wait(); /* Wait for / release slaves to serialize */
-    mpiWaitTime += SST::Core::Profile::getElapsed(waitStart);
+    /* Wait for / release slaves to serialize */
+    barrierWaitTime += serializeReadyBarrier.wait();
 
     for ( auto i = comm_recv_map.begin(); i != comm_recv_map.end(); ++i ) {
         // Post all the receives
@@ -354,7 +356,7 @@ RankSyncParallelSkip::exchange_master(int UNUSED(thread))
     exchange_slave(0); /* Barriers at end */
 
     // Clear the SyncQueues used to send the data after all the sends have completed
-    waitStart = SST::Core::Profile::now();
+    auto waitStart = SST::Core::Profile::now();
     MPI_Waitall(sreq_count, sreqs, MPI_STATUSES_IGNORE);
     mpiWaitTime += SST::Core::Profile::getElapsed(waitStart);
 
