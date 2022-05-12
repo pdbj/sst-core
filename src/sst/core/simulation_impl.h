@@ -454,6 +454,7 @@ public:
     SimTime_t currentSimCycle;
     SimTime_t endSimCycle;
     int       currentPriority;
+    uint64_t  currentEvents;
     RankInfo  my_rank;
     RankInfo  num_ranks;
 
