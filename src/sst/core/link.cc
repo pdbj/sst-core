@@ -241,6 +241,7 @@ Link::send_impl(SimTime_t delay, Event* event)
     event->addSendRecvComponent(comp, pair_link->comp);
 #endif
 #ifdef SST_DELAY_TRACKING
+    event->setSendTime(current_time);
     min_delay = std::min(min_delay, delay + latency);
 #endif
 
