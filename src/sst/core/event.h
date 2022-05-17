@@ -78,6 +78,9 @@ public:
       last_type{""},
       last_port{""}
 #endif
+#ifdef SST_DELAY_TRACKING
+      , send_time{0}
+#endif
     {
         setPriority(EVENTPRIORITY);
     }
@@ -128,6 +131,11 @@ public:
 
 #endif
 
+#ifdef SST_DELAY_TRACKING
+    void setSendTime(SimTime_t now) { send_time = now; }
+    SimTime_t getSendTime () { return send_time; }
+#endif
+
     void serialize_order(SST::Core::Serialization::serializer& ser) override
     {
         Activity::serialize_order(ser);
@@ -141,6 +149,9 @@ public:
         ser& first_port;
         ser& last_type;
         ser& last_port;
+#endif
+#ifdef SST_DELAY_TRACKING
+        ser& send_time;
 #endif
     }
 
@@ -208,6 +219,9 @@ private:
     std::string first_port;
     std::string last_type;
     std::string last_port;
+#endif
+#ifdef SST_DELAY_TRACKING
+    SimTime_t send_time;
 #endif
 
     ImplementVirtualSerializable(SST::Event)
