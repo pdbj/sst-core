@@ -307,8 +307,8 @@ private:
 public:
     void incrementEventCounters(const std::string & sendComponent, const std::string & recvComponent);
     void incrementEventHandlerTime(const std::string & component, uint64_t count);
-  void incrementSerialCounters(uint64_t count);
-  void incrementExchangeCounters(uint64_t events, uint64_t bytes);
+    void incrementSerialCounters(uint64_t count);
+    void incrementExchangeCounters(uint64_t events, uint64_t bytes);
 #endif
 
 #if SST_SYNC_PROFILING
@@ -382,7 +382,7 @@ public:
     std::vector<SimTime_t>  interThreadLatencies;
     SimTime_t               interThreadMinLatency;
     SyncManager*            syncManager;
-    // ThreadSync*      threadSync;
+    // ThreadSync*          threadSync;
     ComponentInfoMap        compInfoMap;
     clockMap_t              clockMap;
     oneShotMap_t            oneShotMap;

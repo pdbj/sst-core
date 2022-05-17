@@ -1502,7 +1502,7 @@ Simulation_impl::printPerformanceInfoCsv(FILE * fp)
             threadSyncCounter,
             (double)threadSyncTime / clockDivisor,
             wt.threadBarrierS,
-	    0.0,
+            0.0,
             (threadSyncCounter == 0.0 ? 0.0 :
              (double)threadSyncTime / threadSyncCounter),
             (threadSyncCounter == 0.0 ? 0.0 :
@@ -1512,7 +1512,7 @@ Simulation_impl::printPerformanceInfoCsv(FILE * fp)
             rankSyncCounter,
             (double)rankSyncTime / clockDivisor,
             wt.rankBarrierS,
-	    wt.rankMPIWaitS,
+            wt.rankMPIWaitS,
             (rankSyncCounter == 0.0 ? 0.0 :
              (double)rankSyncTime / rankSyncCounter),
             (rankSyncCounter == 0.0 ? 0.0 :
@@ -1523,7 +1523,7 @@ Simulation_impl::printPerformanceInfoCsv(FILE * fp)
             allSyncCounter,
             (double)(threadSyncTime + rankSyncTime) / clockDivisor,
             (wt.threadBarrierS + wt.rankBarrierS),
-	    wt.rankMPIWaitS,
+            wt.rankMPIWaitS,
             ( allSyncCounter == 0 ? 0 :
               (double)(threadSyncTime + rankSyncTime) / allSyncCounter),
             ( allSyncCounter == 0 ? 0 :
