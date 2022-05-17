@@ -1219,9 +1219,21 @@ Simulation_impl::printPerformanceInfo()
         fprintf(fp, "Component total event handler execution time: %.6g s\n",
                 eventTimer / clockDivisor);
 
-        fprintf(fp, "Component average event execution time: %.6g %s/event\n\n",
+        fprintf(fp, "Component average event execution time: %.6g %s/event\n",
                 (eventRecvs == 0 ? 0.0 : eventTimer / eventRecvs),
                 clockResolution.c_str());
+
+#if SST_DELAY_TRACKING
+        auto base = compInfoMap.getByName(comp);
+        if (nullptr != base) {
+            const auto links = base->getLinkMap()->getLinkMap();
+            for (const auto l : links) {
+                fprintf(fp, "Component link %s, min delay: %" PRIu64 "\n",
+                        l.first.c_str(), l.second->getMinDelay());
+            }
+	    fprintf(fp, "\n");
+        }
+#endif
     }
     fprintf(fp, "\n");
 #endif  // SST_EVENT_PROFILING
@@ -1400,7 +1412,7 @@ Simulation_impl::printPerformanceInfoCsv(FILE * fp)
 
 #if SST_EVENT_PROFILING
     fprintf(fp, "# Communication Counters:\n");
-    fprintf(fp, "#Comp Name,EvSent,EvRecv,TTime (s),AvgTime (%s/event)\n",
+    fprintf(fp, "#Comp Name,EvSent,EvRecv,TTime (s),AvgTime (%s/event),Port,Min Delay...\n",
             clockResolution.c_str());
     for ( const auto & handler : eventHandlers ) {
         const std::string & comp = handler.first;
@@ -1429,8 +1441,20 @@ Simulation_impl::printPerformanceInfoCsv(FILE * fp)
         }
         fprintf(fp, "%.6g,", eventTimer / clockDivisor);
 
-        fprintf(fp, "%.6g\n",
+        fprintf(fp, "%.6g",
                 (eventRecvs == 0 ? 0.0 : eventTimer / eventRecvs));
+
+#if SST_DELAY_TRACKING
+        auto base = compInfoMap.getByName(comp);
+        if (nullptr != base) {
+            const auto links = base->getLinkMap()->getLinkMap();
+            for (const auto l : links) {
+                fprintf(fp, ",%s,%" PRIu64,
+                        l.first.c_str(), l.second->getMinDelay());
+            }
+        }
+#endif
+	fprintf(fp, "\n");
     }
     fprintf(fp, "\n");
 #endif  // SST_EVENT_PROFILING

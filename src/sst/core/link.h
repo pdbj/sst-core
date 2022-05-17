@@ -179,6 +179,9 @@ public:
     const std::string& getSendingPort() { return port; }
 
 #endif
+#ifdef SST_DELAY_TRACKING
+    SimTime_t getMinDelay() const { return min_delay; }
+#endif
 
 protected:
     Link();
@@ -278,6 +281,9 @@ private:
     std::string comp;
     std::string ctype;
     std::string port;
+#endif
+#ifdef SST_DELAY_TRACKING
+    SimTime_t min_delay;
 #endif
 };
 
