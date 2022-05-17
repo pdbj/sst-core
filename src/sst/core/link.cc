@@ -64,6 +64,9 @@ Link::Link(LinkId_t tag) :
     ctype{""},
     port{""}
 #endif
+#ifdef SST_DELAY_TRACKING
+    , min_delay(MAX_SIMTIME_T)
+#endif
 {}
 
 Link::Link() :
@@ -80,6 +83,9 @@ Link::Link() :
     , comp{""},
     ctype{""},
     port{""}
+#endif
+#ifdef SST_DELAY_TRACKING
+    , min_delay(MAX_SIMTIME_T)
 #endif
 {}
 
@@ -233,6 +239,9 @@ Link::send_impl(SimTime_t delay, Event* event)
 #ifdef SST_EVENT_PROFILING
     // Do this second so ctype, port get recorded if both enabled
     event->addSendRecvComponent(comp, pair_link->comp);
+#endif
+#ifdef SST_DELAY_TRACKING
+    min_delay = std::min(min_delay, delay + latency);
 #endif
 
     send_queue->insert(event);

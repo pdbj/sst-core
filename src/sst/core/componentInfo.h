@@ -275,6 +275,15 @@ public:
         return *value;
     }
 
+    ComponentInfo* getByName(const std::string name) const
+    {
+        for (const auto i : dataByID)
+            {
+              if (i->name == name) return i;
+            }
+        return nullptr;
+    }
+
     bool empty() { return dataByID.empty(); }
 
     void clear()
