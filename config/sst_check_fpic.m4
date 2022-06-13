@@ -5,7 +5,7 @@ AC_DEFUN([SST_CHECK_FPIC],
   LDFLAGS_saved="$LDFLAGS"
 
   SST_ELEMENT_FPIC_FLAGS="-fPIC"
-  CXXFLAGS="$CXXFLAGS $SST_ELEMENT_FPIC_FLAGS"
+  CXXFLAGS="$SST_ELEMENT_FPIC_FLAGS $CXXFLAGS"
 
   AC_LANG_PUSH([C++])
   AC_CHECK_HEADER([stdio.h], [sst_check_fpic_happy="yes"], [sst_check_fpic_happy="no"])
