@@ -55,7 +55,7 @@ AC_DEFUN([AX_CXX_COMPILE_STDCXX_0X], [
   ax_cv_cxx_compile_cxx11_cxx,
   [AC_LANG_PUSH([C++])
   ac_save_CXXFLAGS="$CXXFLAGS"
-  CXXFLAGS="$CXXFLAGS -std=c++11 -D__STDC_FORMAT_MACROS"
+  CXXFLAGS="-std=c++11 -D__STDC_FORMAT_MACROS $CXXFLAGS"
   AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
   template <typename T>
     struct check
@@ -84,7 +84,7 @@ AC_DEFUN([AX_CXX_COMPILE_STDCXX_0X], [
   ax_cv_cxx_compile_cxx0x_cxx,
   [AC_LANG_PUSH([C++])
   ac_save_CXXFLAGS="$CXXFLAGS"
-  CXXFLAGS="$CXXFLAGS -std=c++0x -D__STDC_FORMAT_MACROS"
+  CXXFLAGS="-std=c++0x -D__STDC_FORMAT_MACROS $CXXFLAGS"
   AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
   template <typename T>
     struct check
