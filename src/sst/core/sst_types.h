@@ -15,6 +15,11 @@
 #include <cstdint>
 #include <limits>
 
+#ifdef HAVE___INT128_T
+typedef __int128_t int128_t;
+typedef unsigned __int128_t uint128_t;
+#endif
+
 namespace SST {
 
 typedef uint64_t ComponentId_t;

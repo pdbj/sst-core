@@ -50,10 +50,15 @@ CPPFLAGS='-I$(top_srcdir)/src -I$(top_builddir)/src'" $CPPFLAGS"
 
 AC_CHECK_HEADERS([c_asm.h dlfcn.h intrinsics.h mach/mach_time.h sys/time.h sys/stat.h sys/types.h unistd.h])
 
+AC_CHECK_TYPES(int128_t)
+AC_CHECK_TYPES(uint128_t)
+AC_CHECK_TYPES(__int128)
+
 AC_CACHE_SAVE
 
 AC_CHECK_PROG([DOXYGEN], [doxygen], [doxygen])
 AM_CONDITIONAL([HAVE_DOXYGEN], [test "$DOXYGEN" = "doxygen"])
+
 
 SST_CHECK_PREVIEW_BUILD()
 SST_ENABLE_TESTFRAMEWORK_DEV()
