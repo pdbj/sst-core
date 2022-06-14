@@ -54,7 +54,15 @@ namespace SST {
 Simulation*
 Simulation::getSimulation()
 {
-    return Simulation_impl::instanceMap.at(std::this_thread::get_id());
+    static auto last_thread {std::this_thread::get_id()};
+    static auto last_sim {Simulation_impl::instanceMap.at(last_thread)};
+
+    auto this_thread = std::this_thread::get_id();
+    if (last_thread == this_thread) return last_sim;
+
+    last_thread = this_thread;
+    last_sim = Simulation_impl::instanceMap.at(last_thread);
+    return last_sim;
 }
 
 TimeLord*

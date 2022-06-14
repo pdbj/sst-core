@@ -148,7 +148,17 @@ public:
     /*********  Static Core-only Functions *********/
 
     /** Return a pointer to the singleton instance of the Simulation */
-    static Simulation_impl* getSimulation() { return instanceMap.at(std::this_thread::get_id()); }
+    static Simulation_impl* getSimulation() {
+      static auto last_thread {std::this_thread::get_id()};
+      static auto last_sim {instanceMap.at(last_thread)};
+
+      auto this_thread = std::this_thread::get_id();
+      if (last_thread == this_thread) return last_sim;
+
+      last_thread = this_thread;
+      last_sim = instanceMap.at(last_thread);
+      return last_sim;
+    }
 
     /** Return the TimeLord associated with this Simulation */
     static TimeLord* getTimeLord(void) { return &timeLord; }
