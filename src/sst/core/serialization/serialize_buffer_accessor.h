@@ -81,10 +81,10 @@ protected:
     ser_buffer_accessor() : bufstart_(nullptr), bufptr_(nullptr), size_(0) {}
 
 protected:
-    char*  bufstart_;
-    char*  bufptr_;
-    size_t size_;
-    size_t max_size_;
+    char*  bufstart_{nullptr};
+    char*  bufptr_{nullptr};
+    size_t size_{0};
+    size_t max_size_{0};
 };
 
 } // namespace pvt
