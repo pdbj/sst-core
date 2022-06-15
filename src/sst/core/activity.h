@@ -134,6 +134,20 @@ public:
         // }
     };
 
+#ifdef HAVE_INT128_T
+    template <bool Q>
+    class greater<true, true, Q>
+    {
+    public:
+      inline bool operator()(const Activity* lhs, const Activity* rhs) const
+      {
+	auto lhs_TP = (int128_t)(lhs->delivery_time);
+	auto rhs_TP = (int128_t)(rhs->delivery_time);
+	if (lhs_TP != rhs_TP) return (lhs_TP > rhs_TP);
+	return Q && lhs->queue_order > rhs->queue_order;
+      }
+    };
+#endif
 
     /** Function which will be called when the time for this Activity comes to pass. */
     virtual void execute(void) = 0;
@@ -221,6 +235,8 @@ protected:
     }
 
 private:
+    // delivery_time and priority_order must be adjacent
+    // for class greater specialization
     // Data members
     SimTime_t delivery_time;
     // This will hold both the priority (high bits) and the link order
