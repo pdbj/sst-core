@@ -39,7 +39,7 @@ SST::Core::localMemSize()
 #else
     return local_rss;
 #endif
-};
+}
 
 uint64_t
 SST::Core::maxLocalMemSize()
@@ -59,7 +59,7 @@ SST::Core::maxLocalMemSize()
 #else
     return global_max_rss;
 #endif
-};
+}
 
 uint64_t
 SST::Core::maxGlobalMemSize()
@@ -78,7 +78,7 @@ SST::Core::maxGlobalMemSize()
 #else
     return global_max_rss;
 #endif
-};
+}
 
 uint64_t
 SST::Core::maxLocalPageFaults()
@@ -92,7 +92,7 @@ SST::Core::maxLocalPageFaults()
     MPI_Allreduce(&local_pf, &global_max_pf, 1, MPI_UINT64_T, MPI_MAX, MPI_COMM_WORLD);
 #endif
     return global_max_pf;
-};
+}
 
 uint64_t
 SST::Core::globalPageFaults()
@@ -107,4 +107,4 @@ SST::Core::globalPageFaults()
 #endif
 
     return global_pf;
-};
+}
