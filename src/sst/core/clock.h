@@ -18,7 +18,7 @@
 #include <cinttypes>
 #include <vector>
 
-#define _CLE_DBG(fmt, args...) __DBG(DBG_CLOCK, Clock, fmt, ##args)
+#define _CLE_DBG(fmt, ...) __DBG(DBG_CLOCK, Clock, fmt, __VA_ARGS__)
 
 namespace SST {
 

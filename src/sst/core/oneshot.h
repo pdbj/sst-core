@@ -18,7 +18,7 @@
 
 #include <cinttypes>
 
-#define _ONESHOT_DBG(fmt, args...) __DBG(DBG_ONESHOT, OneShot, fmt, ##args)
+#define _ONESHOT_DBG(fmt, ...) __DBG(DBG_ONESHOT, OneShot, fmt, __VA_ARGS__)
 
 namespace SST {
 

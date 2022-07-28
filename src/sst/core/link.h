@@ -18,7 +18,7 @@
 
 namespace SST {
 
-#define _LINK_DBG(fmt, args...) __DBG(DBG_LINK, Link, fmt, ##args)
+#define _LINK_DBG(fmt,...) __DBG(DBG_LINK, Link, fmt, __VA_ARGS__)
 
 class ActivityQueue;
 class BaseComponent;
