@@ -45,7 +45,7 @@ checkSimpleSerializeDeserialize(T data)
     T    result;
     SST::Comms::deserialize(buffer, result);
     return data == result;
-};
+}
 
 template <typename T>
 bool
@@ -68,7 +68,7 @@ checkContainerSerializeDeserialize(T& data)
         ++result_it;
     }
     return true;
-};
+}
 
 // For unordered containers
 template <typename T>
@@ -95,7 +95,7 @@ checkUContainerSerializeDeserialize(T& data)
         if ( !match_found ) return false;
     }
     return true;
-};
+}
 
 coreTestSerialization::coreTestSerialization(ComponentId_t id, UNUSED(Params& params)) : Component(id)
 {

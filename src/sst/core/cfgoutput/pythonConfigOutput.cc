@@ -372,7 +372,7 @@ PythonConfigGraphOutput::makePythonSafeWithPrefix(const std::string& name, const
 
     makeBufferPythonSafe(buffer);
     return buffer;
-};
+}
 
 void
 PythonConfigGraphOutput::makeBufferPythonSafe(char* buffer) const
@@ -415,7 +415,7 @@ PythonConfigGraphOutput::strncmp(const char* a, const char* b, const size_t n) c
     }
 
     return matched;
-};
+}
 
 char*
 PythonConfigGraphOutput::makeEscapeSafe(const std::string& input) const
