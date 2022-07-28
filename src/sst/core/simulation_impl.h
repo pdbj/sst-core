@@ -42,7 +42,7 @@ extern int main(int argc, char** argv);
 
 namespace SST {
 
-#define _SIM_DBG(fmt, args...) __DBG(DBG_SIM, Sim, fmt, ##args)
+#define _SIM_DBG(fmt, ...) __DBG(DBG_SIM, Sim, fmt, __VA_ARGS__)
 #define STATALLFLAG            "--ALLSTATS--"
 
 class Activity;
