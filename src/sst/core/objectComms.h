@@ -121,8 +121,8 @@ all_gather(dataType& data, std::vector<dataType>& out_data)
     std::vector<char> buffer = Comms::serialize(data);
 
     size_t sendSize = buffer.size();
-    int    allSizes[world];
-    int    displ[world];
+    int *  allSizes = new int[world];
+    int *  displ    = new int[world];
 
     memset(allSizes, '\0', world * sizeof(int));
     memset(displ, '\0', world * sizeof(int));
@@ -144,6 +144,9 @@ all_gather(dataType& data, std::vector<dataType>& out_data)
         auto* bbuf = bigBuff.get();
         Comms::deserialize(&bbuf[displ[i]], allSizes[i], out_data[i]);
     }
+
+    delete [] allSizes;
+    delete [] displ;
 }
 
 #endif

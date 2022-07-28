@@ -18,6 +18,12 @@
 
 #include <map>
 
+#ifdef SST_CONFIG_HAVE_MPI
+DISABLE_WARN_MISSING_OVERRIDE
+#include <mpi.h>
+REENABLE_WARNING
+#endif
+
 namespace SST {
 
 class SyncQueue;
@@ -71,6 +77,11 @@ private:
     double deserializeTime;
 
     Core::ThreadSafe::Spinlock lock;
+
+#ifdef SST_CONFIG_HAVE_MPI
+    MPI_Request * sreqs;
+    MPI_Request * rreqs;
+#endif
 };
 
 } // namespace SST
