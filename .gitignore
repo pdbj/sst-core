@@ -11,6 +11,7 @@ Makefile.in
 libltdl
 clang_format_results*
 Makefile
+share/SSTConfig.cmake
 src/sst/core/sst.x
 src/sst/core/sst
 src/sst/core/sstsim.x
@@ -19,12 +20,15 @@ src/sst/core/sstinfo.x
 src/sst/core/sst-config
 src/sst/core/sst-info
 src/sst/core/sst-register
+src/sst/core/sst-test-core
+src/sst/core/sst-test-elements
 src/sst/SST-*.pc
 src/sst/core/sst_config.h
 src/sst/core/sst_config.h.in
 src/sst/core/sst_config.h.in~
 stamp-h1
 src/sst/sstsimulator.conf
+sst_test_outputs/
 build_info.h
 configure
 aclocal.m4
