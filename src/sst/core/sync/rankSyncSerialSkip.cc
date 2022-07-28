@@ -58,6 +58,11 @@ RankSyncSerialSkip::RankSyncSerialSkip(RankInfo num_ranks, TimeConverter* UNUSED
 {
     max_period     = Simulation_impl::getSimulation()->getMinPartTC();
     myNextSyncTime = max_period->getFactor();
+
+    // Maximum number of outstanding requests is 3 times the number of
+    // ranks I communicate with (1 recv, 2 sends per rank)
+    sreqs = new MPI_Request[2 * num_ranks.rank];
+    rreqs = new MPI_Request[num_ranks.rank];
 }
 
 RankSyncSerialSkip::~RankSyncSerialSkip()
@@ -71,6 +76,9 @@ RankSyncSerialSkip::~RankSyncSerialSkip()
         Output::getDefaultObject().verbose(
             CALL_INFO, 1, 0, "RankSyncSerialSkip mpiWait: %lg sec  deserializeWait:  %lg sec\n", mpiWaitTime,
             deserializeTime);
+
+    delete [] sreqs;
+    delete [] rreqs;
 }
 
 ActivityQueue*
@@ -126,8 +134,6 @@ RankSyncSerialSkip::exchange(void)
 
     // Maximum number of outstanding requests is 3 times the number
     // of ranks I communicate with (1 recv, 2 sends per rank)
-    MPI_Request sreqs[2 * comm_map.size()];
-    MPI_Request rreqs[comm_map.size()];
     int         sreq_count = 0;
     int         rreq_count = 0;
 
@@ -237,6 +243,7 @@ RankSyncSerialSkip::exchange(void)
     MPI_Allreduce(&input, &min_time, 1, MPI_UINT64_T, MPI_MIN, MPI_COMM_WORLD);
 
     myNextSyncTime = min_time + max_period->getFactor();
+
 #endif
 }
 
@@ -245,10 +252,6 @@ RankSyncSerialSkip::exchangeLinkUntimedData(int UNUSED_WO_MPI(thread), std::atom
 {
 #ifdef SST_CONFIG_HAVE_MPI
     if ( thread != 0 ) { return; }
-    // Maximum number of outstanding requests is 3 times the number of
-    // ranks I communicate with (1 recv, 2 sends per rank)
-    MPI_Request sreqs[2 * comm_map.size()];
-    MPI_Request rreqs[comm_map.size()];
     int         rreq_count = 0;
     int         sreq_count = 0;
 

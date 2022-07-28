@@ -38,7 +38,7 @@ struct InternalSharedData
     volatile uint32_t expectedChildren;
     size_t            shmSegSize;
     size_t            numBuffers;
-    size_t            offsets[0]; // offset[0] points to user region, offset[1]... points to circular buffers
+    size_t *          offsets; // offset[0] points to user region, offset[1]... points to circular buffers
 };
 
 /**

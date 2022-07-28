@@ -66,6 +66,13 @@ RankSyncParallelSkip::RankSyncParallelSkip(RankInfo num_ranks, TimeConverter* UN
         recv_count[i] = 0;
     }
     link_send_queue = new SST::Core::ThreadSafe::UnboundedQueue<comm_recv_pair*>[num_ranks.thread];
+
+    // Maximum number of outstanding requests is 3 times the number
+    // of ranks I communicate with (1 recv, 2 sends per rank)
+#ifdef SST_CONFIG_HAVE_MPI
+    sreqs = new MPI_Request[2 * num_ranks.rank];
+    rreqs = new MPI_Request[num_ranks.rank];
+#endif
 }
 
 RankSyncParallelSkip::~RankSyncParallelSkip()
@@ -82,6 +89,8 @@ RankSyncParallelSkip::~RankSyncParallelSkip()
 
     delete[] recv_count;
     delete[] link_send_queue;
+    delete[] sreqs;
+    delete[] rreqs;
 
     if ( mpiWaitTime > 0.0 || deserializeTime > 0.0 )
         Output::getDefaultObject().verbose(
@@ -229,9 +238,6 @@ RankSyncParallelSkip::exchange_master(int UNUSED(thread))
 {
 #ifdef SST_CONFIG_HAVE_MPI
 
-    // Maximum number of outstanding requests is 3 times the number
-    // of ranks I communicate with (1 recv, 2 sends per rank)
-    MPI_Request sreqs[2 * comm_send_map.size()];
     int         sreq_count = 0;
 
     // First thing to do is fill the serialize_queue.
@@ -368,10 +374,6 @@ RankSyncParallelSkip::exchangeLinkUntimedData(int UNUSED_WO_MPI(thread), std::at
 {
 #ifdef SST_CONFIG_HAVE_MPI
     if ( thread != 0 ) { return; }
-    // Maximum number of outstanding requests is 3 times the number
-    // of ranks I communicate with (1 recv, 2 sends per rank)
-    MPI_Request sreqs[2 * comm_send_map.size()];
-    MPI_Request rreqs[comm_recv_map.size()];
     int         rreq_count = 0;
     int         sreq_count = 0;
 
