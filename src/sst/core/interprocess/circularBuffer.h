@@ -115,7 +115,7 @@ private:
     size_t   buffSize;
     size_t   readIndex;
     size_t   writeIndex;
-    T        buffer[0];
+    T*       buffer;
 };
 
 } // namespace Interprocess

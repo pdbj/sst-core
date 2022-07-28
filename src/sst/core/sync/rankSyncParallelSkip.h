@@ -96,6 +96,10 @@ private:
 
     int* recv_count;
     int  send_count;
+#ifdef SST_CONFIG_HAVE_MPI
+    MPI_Request* sreqs;
+    MPI_Request* rreqs;
+#endif
 
     std::atomic<int32_t>                                    remaining_deser;
     SST::Core::ThreadSafe::BoundedQueue<comm_recv_pair*>    deserialize_queue;

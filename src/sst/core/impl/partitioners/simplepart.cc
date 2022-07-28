@@ -133,8 +133,8 @@ SimplePartitioner::simple_partition_step(
         const int lengthA1 = lengthA % 2 == 1 ? (lengthA / 2) + 1 : (lengthA / 2);
         const int lengthA2 = lengthA / 2;
 
-        ComponentId_t* setA1 = (ComponentId_t*)malloc(sizeof(ComponentId_t) * lengthA1);
-        ComponentId_t* setA2 = (ComponentId_t*)malloc(sizeof(ComponentId_t) * lengthA2);
+        ComponentId_t* setA1 = new ComponentId_t[lengthA1];
+        ComponentId_t* setA2 = new ComponentId_t[lengthA2];
 
         int A1index = 0;
         int A2index = 0;
@@ -148,8 +148,8 @@ SimplePartitioner::simple_partition_step(
 
         simple_partition_step(component_map, setA1, lengthA1, A1_rank, setA2, lengthA2, A2_rank, timeTable, step + 1);
 
-        free(setA1);
-        free(setA2);
+        delete[] setA1;
+        delete[] setA2;
     }
 
     const uint32_t B1_rank = rankB;
@@ -159,8 +159,8 @@ SimplePartitioner::simple_partition_step(
         const int lengthB1 = lengthB % 2 == 1 ? (lengthB / 2) + 1 : (lengthB / 2);
         const int lengthB2 = lengthB / 2;
 
-        ComponentId_t* setB1 = (ComponentId_t*)malloc(sizeof(ComponentId_t) * lengthB1);
-        ComponentId_t* setB2 = (ComponentId_t*)malloc(sizeof(ComponentId_t) * lengthB2);
+        ComponentId_t* setB1 = new ComponentId_t[lengthB1];
+        ComponentId_t* setB2 = new ComponentId_t[lengthB2];
 
         int B1index = 0;
         int B2index = 0;
@@ -174,8 +174,8 @@ SimplePartitioner::simple_partition_step(
 
         simple_partition_step(component_map, setB1, lengthB1, B1_rank, setB2, lengthB2, B2_rank, timeTable, step + 1);
 
-        free(setB1);
-        free(setB2);
+        delete[] setB1;
+        delete[] setB2;
     }
 }
 
@@ -199,8 +199,8 @@ SimplePartitioner::performPartition(PartitionGraph* graph)
             graph->getNumComponents() % 2 == 1 ? (graph->getNumComponents() / 2) + 1 : (graph->getNumComponents() / 2);
         const int B_size = graph->getNumComponents() / 2;
 
-        ComponentId_t setA[A_size];
-        ComponentId_t setB[B_size];
+        ComponentId_t* setA = new ComponentId_t[A_size];
+        ComponentId_t* setB = new ComponentId_t[B_size];
 
         int indexA = 0;
         int indexB = 0;
@@ -237,6 +237,9 @@ SimplePartitioner::performPartition(PartitionGraph* graph)
         }
 
         simple_partition_step(component_map, setA, A_size, 0, setB, B_size, 1, timeTable, 1);
+
+        delete[] setA;
+        delete[] setB;
     }
 }
 } // namespace Partition
