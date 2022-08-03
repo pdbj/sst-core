@@ -388,7 +388,7 @@ public:
 
     /** Performance Tracking Information **/
 
-    void intializeDefaultProfileTools(const std::string& config);
+    void initializeDefaultProfileTools(const std::string& config);
 
     std::map<uint64_t, SST::Profile::ProfileTool*> profile_tools;
 

@@ -172,7 +172,7 @@ Simulation_impl::createSimulation(Config* config, RankInfo my_rank, RankInfo num
     instanceMap[tid] = instance;
     instanceVec.resize(num_ranks.thread);
     instanceVec[my_rank.thread] = instance;
-    instance->intializeDefaultProfileTools(config->enabledProfiling());
+    instance->initializeDefaultProfileTools(config->enabledProfiling());
     return instance;
 }
 
@@ -1068,7 +1068,7 @@ Simulation_impl::resizeBarriers(uint32_t nthr)
 
 
 void
-Simulation_impl::intializeDefaultProfileTools(const std::string& config)
+Simulation_impl::initializeDefaultProfileTools(const std::string& config)
 {
     // Need to parse the profile string.  Format is:
     // point=type(key=value,key=value); point=type(...)
