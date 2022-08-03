@@ -33,7 +33,7 @@ SyncProfileToolCount::SyncProfileToolCount(ProfileToolId_t id, const std::string
 void
 SyncProfileToolCount::syncManagerStart()
 {
-    syncmanager_count++;
+    syncmanager_count_++;
 }
 
 
@@ -41,7 +41,7 @@ void
 SyncProfileToolCount::outputData(FILE* fp)
 {
     fprintf(fp, "%s (id = %" PRIu64 ")\n", name.c_str(), my_id);
-    fprintf(fp, "  SyncManager Count = %" PRIu64 "\n", syncmanager_count);
+    fprintf(fp, "  SyncManager Count = %" PRIu64 "\n", syncmanager_count_);
 }
 
 
@@ -55,11 +55,11 @@ void
 SyncProfileToolTime<T>::outputData(FILE* fp)
 {
     fprintf(fp, "%s (id = %" PRIu64 ")\n", name.c_str(), my_id);
-    fprintf(fp, "  SyncManager Count = %" PRIu64 "\n", syncmanager_count);
-    fprintf(fp, "  Total SyncManager Time = %lfs\n", syncmanager_time * 1.0e-9);
+    fprintf(fp, "  SyncManager Count = %" PRIu64 "\n", syncmanager_count_);
+    fprintf(fp, "  Total SyncManager Time = %lfs\n", syncmanager_time_ * 1.0e-9);
     fprintf(fp, "  Average SyncManager Time = %lfns\n", 
-            (syncmanager_count == 0 ? 0.0
-             : (double)syncmanager_time / syncmanager_count));
+            (syncmanager_count_ == 0 ? 0.0
+             : (double)syncmanager_time_ / syncmanager_count_));
 }
 
 

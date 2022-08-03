@@ -69,7 +69,7 @@ public:
     void outputData(FILE* fp) override;
 
 private:
-    uint64_t syncmanager_count = 0;
+    uint64_t syncmanager_count_ = 0;
 };
 
 /**
@@ -89,15 +89,15 @@ public:
     void syncManagerEnd() override
     {
         auto total_time = T::now() - start_time_;
-        syncmanager_time += std::chrono::duration_cast<std::chrono::nanoseconds>(total_time).count();
-        syncmanager_count++;
+        syncmanager_time_ += std::chrono::duration_cast<std::chrono::nanoseconds>(total_time).count();
+        syncmanager_count_++;
     }
 
     void outputData(FILE* fp) override;
 
 private:
-    uint64_t syncmanager_time  = 0;
-    uint64_t syncmanager_count = 0;
+    uint64_t syncmanager_time_  = 0;
+    uint64_t syncmanager_count_ = 0;
 
     typename T::time_point start_time_;
 };
