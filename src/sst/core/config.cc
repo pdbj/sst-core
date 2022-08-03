@@ -906,7 +906,9 @@ static const struct sstLongOpts_s sstOptions[] = {
     DEF_ARG(
         "enable-profiling", 0, "POINTS",
         "Enables default profiling for the specified points.  Argument is a semicolon separated list specifying the "
-        "points to enable.",
+        "points to enable. Allowed points: event, clock, sync. Format is: "
+        "'point:type(key=value,key=value); point:type(...)'  "
+        "'type' is optional, a default will be provided.",
         &ConfigHelper::enableProfiling, true),
     DEF_ARG(
         "profiling-output", 0, "FILE", "Set output location for profiling data [stdout (default) or a filename]",

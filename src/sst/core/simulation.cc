@@ -1071,7 +1071,7 @@ void
 Simulation_impl::initializeDefaultProfileTools(const std::string& config)
 {
     // Need to parse the profile string.  Format is:
-    // point=type(key=value,key=value); point=type(...)
+    // point:type(key=value,key=value); point:type(...)
 
     // type is optional.  If not specified, a default will be used.  Params are optional.
 
