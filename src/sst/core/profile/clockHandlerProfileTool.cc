@@ -115,9 +115,11 @@ ClockHandlerProfileToolTime<T>::outputData(FILE* fp)
     fprintf(fp, "%s (id = %" PRIu64 ")\n", name.c_str(), my_id);
     fprintf(fp, "Name, count, handler time (s), avg. handler time (ns)\n");
     for ( auto& x : times_ ) {
-        fprintf(
-            fp, "%s, %" PRIu64 ", %lf, %" PRIu64 "\n", x.first.c_str(), x.second.count,
-            ((double)x.second.time) / 1000000000.0, x.second.count == 0 ? 0 : x.second.time / x.second.count);
+        fprintf(fp, "%s, %" PRIu64 ", %lf, %lf\n",
+                x.first.c_str(), x.second.count,
+                ((double)x.second.time) * 1.0e-9, 
+                (x.second.count == 0 ? 0.0 
+                 : (double)x.second.time / x.second.count));
     }
 }
 

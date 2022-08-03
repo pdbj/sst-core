@@ -56,9 +56,10 @@ SyncProfileToolTime<T>::outputData(FILE* fp)
 {
     fprintf(fp, "%s (id = %" PRIu64 ")\n", name.c_str(), my_id);
     fprintf(fp, "  SyncManager Count = %" PRIu64 "\n", syncmanager_count);
-    fprintf(fp, "  Total SyncManager Time = %lfs\n", (float)syncmanager_time / 1000000000.0);
-    fprintf(fp, "  Average SyncManager Time = %" PRIu64 "ns\n", 
-	    syncmanager_time == 0 ? 0 : syncmanager_time / syncmanager_count);
+    fprintf(fp, "  Total SyncManager Time = %lfs\n", syncmanager_time * 1.0e-9);
+    fprintf(fp, "  Average SyncManager Time = %lfns\n", 
+            (syncmanager_count == 0 ? 0.0
+             : (double)syncmanager_time / syncmanager_count));
 }
 
 
