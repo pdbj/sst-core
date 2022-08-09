@@ -17,6 +17,11 @@
 #include "sst/core/statapi/statoutput.h"
 #include "sst/core/warnmacros.h"
 
+#include <algorithm>   // minmax
+#include <cmath>      // log10
+#include <utility>    // pair
+
+
 namespace SST {
 namespace Statistics {
 
@@ -60,12 +65,14 @@ public:
         allowedKeySet.insert("numbins");
         allowedKeySet.insert("dumpbinsonoutput");
         allowedKeySet.insert("includeoutofbounds");
+        allowedKeySet.insert("autoscale");
         statParams.pushAllowedKeys(allowedKeySet);
 
         // Process the Parameters
         m_minValue           = statParams.find<BinDataType>("minvalue", 0);
         m_binWidth           = statParams.find<BinDataType>("binwidth", 5000);
         m_numBins            = statParams.find<NumBinsType>("numbins", 100);
+        m_caching            = statParams.find<bool>("autoscale", false);
         m_dumpBinsOnOutput   = statParams.find<bool>("dumpbinsonoutput", true);
         m_includeOutOfBounds = statParams.find<bool>("includeoutofbounds", true);
 
@@ -73,6 +80,7 @@ public:
         if (m_numBins == 0) m_numBins = 1;
         if (m_binWidth == 0) m_binWidth = 1;
         if (m_binWidth < 0) m_binWidth = -m_binWidth;
+
         // Initialize other properties
         m_totalSummed      = 0;
         m_totalSummedSqr   = 0;
@@ -80,6 +88,7 @@ public:
         m_OOBMaxCount      = 0;
         m_itemsBinnedCount = 0;
         this->setCollectionCount(0);
+        m_cache.reserve(CACHE_SIZE);
 
         // Set the Name of this Statistic
         this->setStatisticTypeName("Histogram");
@@ -89,11 +98,105 @@ public:
 
 protected:
     /**
+        Cache a a new value if we're still caching,
+        otherwise configure the histogram.
+    */
+    void Cache (uint64_t N, BinDataType value)
+    {
+        if (!m_caching) return;
+
+        m_cache.push_back(std::make_pair(N, value));
+        this->incrementCollectionCount(N);
+        const uint64_t counts = this->getCollectionCount();
+
+        if (counts < CACHE_SIZE) return;
+
+        // We've got enough counts to configure and populate the real histo
+        // So determine histo parameters
+
+        auto cache_compare = [](const CacheEntryType a,
+                                const CacheEntryType b)
+        {
+            return a.second < b.second;
+        };
+
+        auto minmaxit = std::minmax_element(m_cache.begin(), m_cache.end(),
+                                            cache_compare);
+        BinDataType vmin = minmaxit.first->second;
+        BinDataType vmax = minmaxit.second->second;
+        BinDataType width{1};
+
+        if (vmin == vmax) {
+                --vmin;
+                ++vmax;
+                width = (vmax - vmin) / m_numBins;
+            }
+        else {
+
+            // Call 2.5% of the range for overflow on each side
+            BinDataType dv = (vmax - vmin) * 0.025;
+            vmin += dv;
+            vmax -= dv;
+
+            // Function to push min/max to zero
+            auto push_to_zero = [&vmin, &vmax](const BinDataType delta)
+              {
+                if (vmin >= 0 && vmin - delta < 0) vmin = 0;
+                if (vmax <= 0 && vmax + delta > 0) vmax = 0;
+              };
+            // If we're within 5% of zero use zero
+            push_to_zero (dv);
+
+            width = (vmax - vmin) / m_numBins;
+
+            // Round width to 1, 1.5, 2, or 5
+            auto round_to_125 = [](BinDataType & value)
+              {
+                uint64_t jlog = std::log10 (value);  // truncate to int
+                BinDataType sigfig = value * std::pow(10, -jlog);
+                BinDataType siground = 0;
+                if (sigfig <= 1)      siground = 1;
+                else if (sigfig <= 2) siground = 2;
+                else if (sigfig <= 5) siground = 5;
+                else 
+                  {
+                    siground = 1;
+                    ++ jlog;
+                  }
+                value = siground * std::pow(10, jlog);
+              };
+            round_to_125(width);
+            push_to_zero(width);
+
+            round_to_125(vmin);
+            push_to_zero(width);
+        }
+
+        // Set up the histogram
+        m_minValue = vmin;
+        m_binWidth = width;
+        // printf("DEBUG: min: %f, wid: %f\n", (double)m_minValue, (double)m_binWidth);
+
+        // Insert cached values
+        m_caching = false;
+        clearStatisticData();
+        for (const auto & v : m_cache) {
+                addData_impl_Ntimes(v.first, v.second);
+        }
+        m_cache.clear();
+    }
+
+    /**
         Adds a new value to the histogram. The correct bin is identified and then incremented. If no bin can be found
         to hold the value then a new bin is created.
     */
-    void addData_impl_Ntimes(uint64_t N, BinDataType value) override
+     void addData_impl_Ntimes(uint64_t N, BinDataType value) override
     {
+        if (m_caching) {
+                Cache(N, value);
+                return;
+            }
+
         // Check to see if the value is above or below the min/max values
         if ( value < getBinsMinValue() ) {
             m_OOBMinCount += N;
@@ -340,6 +443,20 @@ private:
 
     // A map of the the bin starts to the bin counts
     HistoMap_t m_binsMap;
+
+    // Autoscaling cache
+
+    // Number of values to cache before histogramming
+    static constexpr std::size_t CACHE_SIZE {2000};
+
+    // Cache entry type
+    typedef std::pair<uint64_t, BinDataType> CacheEntryType;
+
+    // Autoscaling cache
+    std::vector<CacheEntryType> m_cache;
+
+    // If we're still caching
+    bool m_caching;
 
     // Support
     std::vector<uint32_t> m_Fields;
