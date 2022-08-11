@@ -34,12 +34,12 @@ namespace Statistics {
     Holder of data grouped into pre-determined width bins.
     \tparam BinDataType is the type of the data held in each bin (i.e. what data type described the width of the bin)
 */
-#define CountType   uint64_t
-#define NumBinsType uint32_t
-
 template <class BinDataType>
 class HistogramStatistic : public Statistic<BinDataType>
 {
+    using CountType = uint64_t;
+    using NumBinsType = uint32_t;
+
 public:
     SST_ELI_DECLARE_STATISTIC_TEMPLATE(
         HistogramStatistic,
@@ -64,11 +64,15 @@ public:
 
         // Process the Parameters
         m_minValue           = statParams.find<BinDataType>("minvalue", 0);
-        m_binWidth           = statParams.find<NumBinsType>("binwidth", 5000);
+        m_binWidth           = statParams.find<BinDataType>("binwidth", 5000);
         m_numBins            = statParams.find<NumBinsType>("numbins", 100);
         m_dumpBinsOnOutput   = statParams.find<bool>("dumpbinsonoutput", true);
         m_includeOutOfBounds = statParams.find<bool>("includeoutofbounds", true);
 
+        // Sanity fixes
+        if (m_numBins == 0) m_numBins = 1;
+        if (m_binWidth == 0) m_binWidth = 1;
+        if (m_binWidth < 0) m_binWidth = -m_binWidth;
         // Initialize other properties
         m_totalSummed      = 0;
         m_totalSummedSqr   = 0;
@@ -107,17 +111,19 @@ protected:
 
         // Increment the Binned count (note this <= to the Statistics added Item Count)
         m_itemsBinnedCount++;
+        this->incrementCollectionCount(N);
 
         // Figure out what the starting bin is and find it in the map
         // To support signed and unsigned values along with floating point types,
         // the calculation to find the bin_start value must be done in floating point
         // then converted to BinDataType
-        double      calc1     = (double)value / (double)m_binWidth;
-        double      calc2     = floor(calc1); // Find the floor of the value
-        double      calc3     = m_binWidth * calc2;
-        BinDataType bin_start = (BinDataType)calc3;
-        //      printf("DEBUG: value = %d, junk1 = %f, calc2 = %f, calc3 = %f : bin_start = %d, item count = %ld, \n",
-        //      value, calc1, calc2, calc3, bin_start, getStatCollectionCount());
+        double      delta     = (double)value - m_minValue;
+        double      ind       = delta / m_binWidth;
+        NumBinsType index     = floor(ind);
+        BinDataType bin_start = m_minValue + index * m_binWidth;
+
+        // printf("DEBUG: value = %f, delta = %f, ind = %f, index = %d, bin_start = %f, item count = %ld, \n",
+        // value, delta, ind, index, (double)bin_start, getStatCollectionCount());
 
         HistoMapItr_t bin_itr = m_binsMap.find(bin_start);
 
@@ -142,7 +148,7 @@ private:
     NumBinsType getNumBins() { return m_numBins; }
 
     /** Get the width of a bin in this histogram */
-    NumBinsType getBinWidth() { return m_binWidth; }
+    BinDataType getBinWidth() { return m_binWidth; }
 
     /**
         Get the count of items in the bin by the start value (e.g. give me the count of items in the bin which begins at
@@ -177,14 +183,14 @@ private:
     BinDataType getBinsMaxValue()
     {
         // Compute the max value based on the width * num bins offset by minvalue
-        return (m_binWidth * m_numBins) + m_minValue - 1;
+        return (m_binWidth * m_numBins) + m_minValue;
     }
 
     /**
         Get the total number of items collected by the statistic
         \return The number of items that have been added to the statistic
     */
-    uint64_t getStatCollectionCount()
+    CountType getStatCollectionCount()
     {
         // Get the number of items added (but not necessarily binned) to this statistic
         return this->getCollectionCount();
@@ -228,7 +234,7 @@ private:
         // Check to see if we have registered the Startup Fields
         m_Fields.push_back(statOutput->registerField<BinDataType>("BinsMinValue"));
         m_Fields.push_back(statOutput->registerField<BinDataType>("BinsMaxValue"));
-        m_Fields.push_back(statOutput->registerField<NumBinsType>("BinWidth"));
+        m_Fields.push_back(statOutput->registerField<BinDataType>("BinWidth"));
         m_Fields.push_back(statOutput->registerField<NumBinsType>("TotalNumBins"));
         m_Fields.push_back(statOutput->registerField<BinDataType>("Sum"));
         m_Fields.push_back(statOutput->registerField<BinDataType>("SumSQ"));
@@ -243,13 +249,13 @@ private:
 
         // Do we also need to dump the bin counts on output
         if ( true == m_dumpBinsOnOutput ) {
-            BinDataType binLL;
-            BinDataType binUL;
+            BinDataType binLL = getBinsMinValue();
+            BinDataType binUL = binLL;
 
             for ( uint32_t y = 0; y < getNumBins(); y++ ) {
                 // Figure out the upper and lower values for this bin
-                binLL = (y * (uint64_t)getBinWidth()) + getBinsMinValue(); // Force full 64-bit multiply -mpf 10/8/15
-                binUL = binLL + getBinWidth() - 1;
+                binLL = binUL;
+                binUL += getBinWidth();
                 // Build the string name for this bin and add it as a field
                 std::stringstream ss;
                 ss << "Bin" << y << ":" << binLL << "-" << binUL;
@@ -311,7 +317,7 @@ private:
     BinDataType m_minValue;
 
     // The width of each Histogram bin
-    NumBinsType m_binWidth;
+    BinDataType m_binWidth;
 
     // The number of bins to be supported
     NumBinsType m_numBins;
